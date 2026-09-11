@@ -34,3 +34,29 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local backups / generated working copies
+.*-backup/
+.*-backups/
+.reports-backups/
+.theme-backups/
+.projects-residue-backup/
+.projects-route-resolution-backup/
+.rbac-project-resolution-v1-backup/
+
+# backup files
+*.bak
+*.bak.*
+*.before-*
+*.pre-*
+*.backup
+
+# local logs
+/logs/
+*.log
+
+# backend local/generated files
+/backend/vendor/
+/backend/node_modules/
+/backend/storage/logs/
+/backend/.phpunit.result.cache

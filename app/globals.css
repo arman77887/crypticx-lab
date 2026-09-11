@@ -3,25 +3,561 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cx-bg: #e8edf2;
+  --cx-surface: #e8edf2;
+  --cx-text: #17212b;
+  --cx-muted: #687684;
+  --cx-subtle: #71808d;
+  --cx-border: #d2d8dd;
+  --cx-dark: #17212b;
+  --cx-shadow-dark: #c8cdd2;
+  --cx-shadow-light: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  margin: 0;
+  min-height: 100vh;
+  background: var(--cx-bg);
+  color: var(--cx-text);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #17212b;
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 3px solid #667887;
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cx-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid var(--cx-bg);
+  border-radius: 999px;
+  background: #b9c1c8;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9faab3;
+}
+
+@layer components {
+  .cx-raised {
+    background: var(--cx-surface);
+    box-shadow:
+      8px 8px 18px var(--cx-shadow-dark),
+      -8px -8px 18px var(--cx-shadow-light);
+  }
+
+  .cx-raised-sm {
+    background: var(--cx-surface);
+    box-shadow:
+      5px 5px 10px var(--cx-shadow-dark),
+      -5px -5px 10px var(--cx-shadow-light);
+  }
+
+  .cx-inset {
+    background: var(--cx-surface);
+    box-shadow:
+      inset 5px 5px 12px #cbd0d5,
+      inset -5px -5px 12px var(--cx-shadow-light);
+  }
+
+  .cx-inset-sm {
+    background: var(--cx-surface);
+    box-shadow:
+      inset 3px 3px 7px #cbd0d5,
+      inset -3px -3px 7px var(--cx-shadow-light);
+  }
+
+  .cx-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    border-radius: 14px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .cx-button:hover {
+    transform: translateY(-1px);
+  }
+
+  .cx-button:active {
+    transform: translateY(0);
+  }
+
+  .cx-button-primary {
+    color: #ffffff;
+    background: var(--cx-dark);
+    box-shadow:
+      7px 7px 15px #c2c7cc,
+      -7px -7px 15px #ffffff;
+  }
+
+  .cx-button-secondary {
+    color: #344250;
+    background: var(--cx-surface);
+    box-shadow:
+      7px 7px 14px var(--cx-shadow-dark),
+      -7px -7px 14px var(--cx-shadow-light);
+  }
+
+  .cx-input {
+    width: 100%;
+    min-height: 48px;
+    border: 0;
+    border-radius: 14px;
+    padding: 0 16px;
+    color: var(--cx-text);
+    background: var(--cx-surface);
+    box-shadow:
+      inset 4px 4px 9px #cbd0d5,
+      inset -4px -4px 9px var(--cx-shadow-light);
+  }
+
+  .cx-input::placeholder {
+    color: #8a969f;
+  }
+
+  .cx-input:focus {
+    outline: none;
+    box-shadow:
+      inset 4px 4px 9px #cbd0d5,
+      inset -4px -4px 9px var(--cx-shadow-light),
+      0 0 0 2px #8795a1;
+  }
+
+  .cx-card {
+    border-radius: 24px;
+    background: var(--cx-surface);
+    box-shadow:
+      8px 8px 18px var(--cx-shadow-dark),
+      -8px -8px 18px var(--cx-shadow-light);
+  }
+
+  .cx-divider {
+    height: 1px;
+    background: var(--cx-border);
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  .cx-container {
+    width: min(100% - 2rem, 80rem);
+    margin-inline: auto;
+  }
 }
+
+@media (max-width: 640px) {
+  .cx-container {
+    width: min(100% - 1.25rem, 80rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* CrypticX SOC World Map */
+.cx-soc-map .leaflet-control-zoom a {
+  background: #090a0d;
+  color: rgba(255, 255, 255, 0.75);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.cx-soc-map .leaflet-control-zoom a:hover {
+  background: #111318;
+  color: #fff;
+}
+
+.cx-soc-map .leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.cx-soc-map .leaflet-control-attribution a {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cx-soc-map .leaflet-tile {
+  filter: brightness(0.45) grayscale(1) contrast(1.2);
+}
+
+/* =========================================================
+   CRYPTICX LAB — GLOBAL BLACK / RED SECURITY THEME
+   ========================================================= */
+
+:root {
+  --cx-bg: #050505;
+  --cx-surface: #0a0a0b;
+  --cx-surface-2: #0e0e10;
+
+  --cx-text: #f5f5f5;
+  --cx-muted: #8f9298;
+  --cx-subtle: #666a70;
+
+  --cx-border: rgba(255, 255, 255, 0.07);
+
+  --cx-dark: #000000;
+
+  --cx-red: #dc2626;
+  --cx-red-bright: #ef4444;
+  --cx-red-deep: #7f1d1d;
+  --cx-red-soft: rgba(220, 38, 38, 0.10);
+
+  --cx-shadow-dark: rgba(0, 0, 0, 0.72);
+  --cx-shadow-light: rgba(255, 255, 255, 0.025);
+}
+
+html {
+  background: #050505;
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(
+      circle at 15% 0%,
+      rgba(127, 29, 29, 0.15),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(220, 38, 38, 0.07),
+      transparent 28rem
+    ),
+    #050505 !important;
+
+  color: var(--cx-text);
+}
+
+/* ---------------------------------------------------------
+   Shared CrypticX surfaces
+   --------------------------------------------------------- */
+
+.cx-card,
+.cx-raised,
+.cx-raised-sm {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17, 17, 19, 0.98),
+      rgba(7, 7, 8, 0.99)
+    ) !important;
+
+  box-shadow:
+    14px 14px 38px rgba(0, 0, 0, 0.60),
+    -6px -6px 22px rgba(255, 255, 255, 0.018),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.cx-card {
+  transition:
+    transform 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.cx-card:hover {
+  border-color: rgba(239, 68, 68, 0.20) !important;
+
+  box-shadow:
+    18px 18px 45px rgba(0, 0, 0, 0.66),
+    -6px -6px 22px rgba(255, 255, 255, 0.018),
+    0 0 35px rgba(220, 38, 38, 0.045) !important;
+}
+
+/* ---------------------------------------------------------
+   Inset / recessed panels
+   --------------------------------------------------------- */
+
+.cx-inset,
+.cx-inset-sm {
+  border: 1px solid rgba(255, 255, 255, 0.045) !important;
+
+  background: #080809 !important;
+
+  box-shadow:
+    inset 7px 7px 18px rgba(0, 0, 0, 0.78),
+    inset -4px -4px 13px rgba(255, 255, 255, 0.018) !important;
+}
+
+/* ---------------------------------------------------------
+   Buttons
+   --------------------------------------------------------- */
+
+.cx-button {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.cx-button:hover {
+  transform: translateY(-1px);
+}
+
+.cx-button-primary {
+  border-color: rgba(239, 68, 68, 0.38) !important;
+
+  background:
+    linear-gradient(
+      145deg,
+      #dc2626,
+      #991b1b
+    ) !important;
+
+  color: #ffffff !important;
+
+  box-shadow:
+    0 12px 32px rgba(127, 29, 29, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+.cx-button-primary:hover {
+  background:
+    linear-gradient(
+      145deg,
+      #ef4444,
+      #b91c1c
+    ) !important;
+
+  box-shadow:
+    0 16px 38px rgba(185, 28, 28, 0.30),
+    0 0 28px rgba(239, 68, 68, 0.08) !important;
+}
+
+.cx-button-secondary {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  color: rgba(255, 255, 255, 0.72) !important;
+
+  box-shadow:
+    7px 7px 18px rgba(0, 0, 0, 0.45),
+    -3px -3px 12px rgba(255, 255, 255, 0.012) !important;
+}
+
+.cx-button-secondary:hover {
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  background: rgba(220, 38, 38, 0.06) !important;
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------
+   Inputs / forms
+   --------------------------------------------------------- */
+
+.cx-input {
+  border: 1px solid rgba(255, 255, 255, 0.075) !important;
+  background: #080809 !important;
+  color: #f5f5f5 !important;
+
+  box-shadow:
+    inset 5px 5px 13px rgba(0, 0, 0, 0.72),
+    inset -3px -3px 10px rgba(255, 255, 255, 0.014) !important;
+}
+
+.cx-input::placeholder {
+  color: rgba(255, 255, 255, 0.28) !important;
+}
+
+.cx-input:focus {
+  border-color: rgba(239, 68, 68, 0.42) !important;
+
+  box-shadow:
+    inset 5px 5px 13px rgba(0, 0, 0, 0.72),
+    0 0 0 3px rgba(220, 38, 38, 0.08),
+    0 0 28px rgba(220, 38, 38, 0.05) !important;
+}
+
+/* ---------------------------------------------------------
+   Dividers / links / selection
+   --------------------------------------------------------- */
+
+.cx-divider {
+  border-color: rgba(255, 255, 255, 0.065) !important;
+}
+
+a {
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+::selection {
+  background: rgba(220, 38, 38, 0.42);
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------
+   Scrollbar
+   --------------------------------------------------------- */
+
+* {
+  scrollbar-color: #7f1d1d #080809;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080809;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 2px solid #080809;
+  border-radius: 999px;
+  background: linear-gradient(#991b1b, #450a0a);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(#dc2626, #7f1d1d);
+}
+
+/* ---------------------------------------------------------
+   Common old light palette compatibility
+   Converts legacy CrypticX pages while they are migrated.
+   --------------------------------------------------------- */
+
+.bg-white {
+  background-color: #09090a !important;
+}
+
+.text-gray-900,
+.text-slate-900 {
+  color: #f5f5f5 !important;
+}
+
+.text-gray-800,
+.text-slate-800 {
+  color: #e5e7eb !important;
+}
+
+.text-gray-700,
+.text-slate-700 {
+  color: #c7c9cd !important;
+}
+
+.text-gray-600,
+.text-slate-600,
+.text-gray-500,
+.text-slate-500 {
+  color: #92959b !important;
+}
+
+.border-gray-100,
+.border-gray-200,
+.border-slate-100,
+.border-slate-200 {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* ---------------------------------------------------------
+   Global animated atmospheric layer
+   --------------------------------------------------------- */
+
+@keyframes cxGlobalPulse {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes cxGlobalFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.cx-security-glow {
+  animation: cxGlobalPulse 4s ease-in-out infinite;
+}
+
+.cx-security-float {
+  animation: cxGlobalFloat 5s ease-in-out infinite;
+}
+
+/* Keep motion accessible */
+@media (prefers-reduced-motion: reduce) {
+  .cx-security-glow,
+  .cx-security-float {
+    animation: none !important;
+  }
+}
+

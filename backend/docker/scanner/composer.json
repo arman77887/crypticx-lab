@@ -1,0 +1,22 @@
+{
+    "name": "crypticx/scanner-runtime",
+    "description": "Minimal isolated runtime for CrypticX Lab scanners",
+    "type": "project",
+    "require": {
+        "php": "^8.4",
+        "ext-curl": "*",
+        "ext-filter": "*",
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "guzzlehttp/psr7": "2.13.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\Services\\Scanner\\": "src/Scanner/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": false
+    }
+}
