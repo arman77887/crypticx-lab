@@ -20,6 +20,14 @@ class PaddleWebhookController extends Controller
         try {
             $verifier->verify($request);
         } catch (Throwable $exception) {
+            Log::warning(
+                'Paddle webhook verification failed.',
+                [
+                    'exception' => get_class($exception),
+                    'message' => $exception->getMessage(),
+                ]
+            );
+
             return response()->json([
                 'success' => false,
                 'code' => 'INVALID_WEBHOOK_SIGNATURE',
