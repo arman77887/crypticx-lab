@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import {
+  downloadReportPdf,
   getReports,
   getStoredToken,
   type ReportRecord,
@@ -40,6 +41,10 @@ function riskLabelClass(level: string | null | undefined): string {
 }
 
 export default function ReportsPage() {
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(
+    null,
+  );
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
@@ -136,6 +141,23 @@ export default function ReportsPage() {
       sum + (report.findings_snapshot?.length ?? 0),
     0,
   );
+
+  async function handleDownloadPdf(reportId: string) {
+    setDownloadError(null);
+    setDownloadingReportId(reportId);
+
+    try {
+      await downloadReportPdf(reportId);
+    } catch (err) {
+      setDownloadError(
+        err instanceof Error
+          ? err.message
+          : "Unable to download report PDF.",
+      );
+    } finally {
+      setDownloadingReportId(null);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
@@ -347,12 +369,24 @@ export default function ReportsPage() {
                             </div>
                           </div>
 
-                          <Link
-                            href={`/reports/${report.id}`}
-                            className="cx-button cx-button-primary shrink-0 rounded-xl px-5 py-2.5 text-center text-sm font-semibold"
-                          >
-                            View Report
-                          </Link>
+                          <div className="flex shrink-0 flex-wrap gap-2">
+                            <Link
+                              href={`/reports/${report.id}`}
+                              className="cx-button cx-button-primary rounded-xl px-5 py-2.5 text-center text-sm font-semibold"
+                            >
+                              View Report
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => void handleDownloadPdf(report.id)}
+                              disabled={downloadingReportId === report.id}
+                              className="cx-button cx-button-secondary rounded-xl px-5 py-2.5 text-center text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {downloadingReportId === report.id
+                                ? "Downloading..."
+                                : "Download PDF"}
+                            </button>
+                          </div>
                         </div>
                       </article>
                     );

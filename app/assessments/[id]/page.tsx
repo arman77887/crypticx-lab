@@ -8,6 +8,7 @@ import {
   AssessmentIntelligenceResponse,
   CreateAssessmentResponse,
   generateReport,
+  downloadReportPdf,
   getAssessment,
   getAssessmentIntelligence,
   getStoredToken,
@@ -427,6 +428,33 @@ export default function AssessmentDetailPage() {
     );
   }
 
+  async function handleDownloadReportPdf() {
+    if (!assessment || assessment.status !== "completed") {
+      return;
+    }
+
+    setReportError("");
+    setGeneratingReport(true);
+
+    try {
+      /*
+       * The backend returns the existing immutable report when one already
+       * exists for this assessment; otherwise it creates an authorized report.
+       * PDF authorization is enforced again by ReportController::pdf().
+       */
+      const response = await generateReport(assessment.id);
+      await downloadReportPdf(response.data.id);
+    } catch (err) {
+      setReportError(
+        err instanceof Error
+          ? err.message
+          : "Unable to download assessment PDF.",
+      );
+    } finally {
+      setGeneratingReport(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] px-6 py-20">
       <div className="mx-auto max-w-7xl">
@@ -471,8 +499,21 @@ export default function AssessmentDetailPage() {
                 className="cx-button cx-button-primary disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {generatingReport
-                  ? "Generating Report…"
-                  : "Generate Report"}
+                  ? "Opening Report…"
+                  : "Open / Export Report"}
+              </button>
+            ) : null}
+
+            {assessment.status === "completed" ? (
+              <button
+                type="button"
+                onClick={() => void handleDownloadReportPdf()}
+                disabled={generatingReport}
+                className="cx-button cx-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {generatingReport
+                  ? "Preparing PDF..."
+                  : "Download PDF"}
               </button>
             ) : null}
           </div>
