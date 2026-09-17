@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\PasswordRecoveryController;
 
 Route::prefix('v1')->group(function () {
     Route::get('/health', function () {
@@ -37,6 +38,21 @@ Route::prefix('v1')->group(function () {
         '/auth/login',
         [AuthController::class, 'login']
     )->middleware('throttle:auth-login');
+
+    Route::post(
+        '/auth/password/forgot',
+        [PasswordRecoveryController::class, 'forgot']
+    )->middleware('throttle:3,1');
+
+    Route::post(
+        '/auth/password/verify',
+        [PasswordRecoveryController::class, 'verify']
+    )->middleware('throttle:10,1');
+
+    Route::post(
+        '/auth/password/reset',
+        [PasswordRecoveryController::class, 'reset']
+    )->middleware('throttle:5,1');
 
     Route::middleware([
         'auth:sanctum',

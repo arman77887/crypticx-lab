@@ -101,7 +101,7 @@ export default function LoginPage() {
 
                   <Link
                     href="/forgot-password"
-                    className="text-xs font-semibold text-[var(--cx-subtle)] transition-opacity hover:opacity-70"
+                    className="text-sm font-semibold text-zinc-300 transition-colors hover:text-red-400 focus-visible:outline-none focus-visible:text-red-400"
                   >
                     Forgot password?
                   </Link>

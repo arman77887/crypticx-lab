@@ -100,6 +100,67 @@ export async function apiRequest<T>(
   return data as T;
 }
 
+export type PasswordRecoveryResponse = {
+  success: boolean;
+  message: string;
+};
+
+export type PasswordRecoveryVerifyResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    reset_token: string;
+  };
+};
+
+export async function requestPasswordReset(
+  email: string,
+): Promise<PasswordRecoveryResponse> {
+  return apiRequest<PasswordRecoveryResponse>(
+    "/auth/password/forgot",
+    {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    },
+  );
+}
+
+export async function verifyPasswordResetCode(
+  email: string,
+  code: string,
+): Promise<PasswordRecoveryVerifyResponse> {
+  return apiRequest<PasswordRecoveryVerifyResponse>(
+    "/auth/password/verify",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        code,
+      }),
+    },
+  );
+}
+
+export async function resetPassword(
+  email: string,
+  resetToken: string,
+  password: string,
+  passwordConfirmation: string,
+): Promise<PasswordRecoveryResponse> {
+  return apiRequest<PasswordRecoveryResponse>(
+    "/auth/password/reset",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email,
+        reset_token: resetToken,
+        password,
+        password_confirmation: passwordConfirmation,
+      }),
+    },
+  );
+}
+
 export async function register(
   name: string,
   email: string,
