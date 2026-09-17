@@ -28,12 +28,40 @@
             border-bottom: 3px solid #b91c1c;
         }
 
+        .brand-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .brand-logo-cell {
+            width: 92px;
+            vertical-align: middle;
+            padding-right: 14px;
+        }
+
+        .brand-logo {
+            display: block;
+            width: 82px;
+            height: auto;
+        }
+
+        .brand-text-cell {
+            vertical-align: middle;
+        }
+
         .brand {
             font-size: 11px;
             font-weight: bold;
             letter-spacing: 1.4px;
             color: #b91c1c;
             text-transform: uppercase;
+        }
+
+        .brand-name {
+            margin-top: 3px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #09090b;
         }
 
         .title {
@@ -175,7 +203,29 @@
     @endphp
 
     <div class="header">
-        <div class="brand">CrypticX Lab · Immutable Security Report</div>
+        <table class="brand-table">
+            <tr>
+                @if (!empty($logoDataUri))
+                    <td class="brand-logo-cell">
+                        <img
+                            src="{{ $logoDataUri }}"
+                            alt="CrypticX Lab"
+                            class="brand-logo"
+                        >
+                    </td>
+                @endif
+
+                <td class="brand-text-cell">
+                    <div class="brand">
+                        Immutable Security Report
+                    </div>
+
+                    <div class="brand-name">
+                        CrypticX Lab
+                    </div>
+                </td>
+            </tr>
+        </table>
 
         <h1 class="title">{{ $report['title'] }}</h1>
 

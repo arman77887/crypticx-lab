@@ -74,6 +74,25 @@ class ReportController extends Controller
         Assessment $assessment,
         ReportGenerationService $reports
     ): JsonResponse {
+        $existingReport = Report::query()
+            ->where('user_id', $request->user()->id)
+            ->where('assessment_id', $assessment->id)
+            ->latest('generated_at')
+            ->first();
+
+        if ($existingReport) {
+            $existingReport->load([
+                'target:id,name,url,hostname',
+                'assessment:id,target_id,profile,status,completed_at',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Existing report loaded successfully.',
+                'data' => $existingReport,
+            ], 200);
+        }
+
         try {
             $report = $reports->generate(
                 $request->user(),

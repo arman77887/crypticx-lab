@@ -63,8 +63,19 @@ class ReportPdfService
             substr((string) $report->id, 0, 8)
         );
 
+        $logoPath = dirname(base_path()).'/public/brand/crypticx2.png';
+
+        $logoDataUri = null;
+
+        if (is_file($logoPath) && is_readable($logoPath)) {
+            $logoDataUri = 'data:image/png;base64,'.base64_encode(
+                file_get_contents($logoPath)
+            );
+        }
+
         return Pdf::loadView('reports.pdf', [
             'report' => $payload,
+            'logoDataUri' => $logoDataUri,
         ])
             ->setPaper('a4', 'portrait')
             ->download($filename);

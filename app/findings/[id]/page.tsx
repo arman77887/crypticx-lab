@@ -5,6 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   confirmFinding,
+  downloadReportPdf,
+  generateReport,
   getFinding,
   getFindingHistory,
   getFindingLifecycle,
@@ -141,6 +143,7 @@ export default function FindingDetailsPage() {
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -229,6 +232,37 @@ export default function FindingDetailsPage() {
   const riskLevel = display(risk, "level");
   const riskScore = display(risk, "score");
   const riskComponents = nested(risk, "components");
+
+  async function handleDownloadAssessmentPdf() {
+    const assessmentId = finding?.assessment_id;
+
+    if (typeof assessmentId !== "string" || assessmentId.trim() === "") {
+      setError("This finding is not linked to an assessment.");
+      return;
+    }
+
+    setError("");
+    setNotice("");
+    setPdfLoading(true);
+
+    try {
+      /*
+       * generateReport() is ownership-protected by the assessment and target.
+       * downloadReportPdf() performs report ownership authorization again.
+       */
+      const response = await generateReport(assessmentId);
+      await downloadReportPdf(response.data.id);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to download assessment PDF.",
+      );
+    } finally {
+      setPdfLoading(false);
+    }
+  }
+
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
@@ -499,6 +533,30 @@ export default function FindingDetailsPage() {
                     </p>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            <section className="cx-card mt-6 p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-bold">
+                    Assessment Report
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--cx-muted)]">
+                    Download the security report for the assessment that produced this finding.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadAssessmentPdf()}
+                  disabled={pdfLoading}
+                  className="cx-button cx-button-secondary shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {pdfLoading
+                    ? "Preparing PDF..."
+                    : "Download Assessment PDF"}
+                </button>
               </div>
             </section>
 
