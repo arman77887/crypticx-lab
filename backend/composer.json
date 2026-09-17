@@ -12,7 +12,8 @@
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^2.9",
         "paddlehq/paddle-php-sdk": "^1.17",
-        "php-http/guzzle7-adapter": "^1.1"
+        "php-http/guzzle7-adapter": "^1.1",
+        "web-auth/webauthn-lib": "^5.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

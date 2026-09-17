@@ -82,6 +82,66 @@ class AuthController extends Controller
 
         $user->load('roles');
 
+        $isAdministrator = $user->roles->contains(
+            fn ($role) => in_array(
+                $role->slug,
+                ['owner', 'administrator'],
+                true
+            )
+        );
+
+        if ($isAdministrator) {
+            $activePasskeyCount = $user
+                ->webAuthnCredentials()
+                ->whereNull('revoked_at')
+                ->count();
+
+            if ($activePasskeyCount < 1) {
+                $this->telemetry->audit(
+                    $request,
+                    'auth.login_passkey_missing',
+                    'authentication',
+                    $user,
+                    ['success' => false],
+                    'user',
+                    $user->id,
+                );
+
+                return response()->json([
+                    'success' => false,
+                    'message' =>
+                        'Administrator passkey verification is required.',
+                ], 403);
+            }
+
+            $passkey = app(
+                \App\Services\WebAuthn\WebAuthnService::class
+            )->createAuthenticationOptions($user);
+
+            $this->telemetry->audit(
+                $request,
+                'auth.login_passkey_required',
+                'authentication',
+                $user,
+                ['success' => true],
+                'user',
+                $user->id,
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' =>
+                    'Passkey verification required.',
+                'data' => [
+                    'passkey_required' => true,
+                    'transaction_id' =>
+                        $passkey['transaction_id'],
+                    'public_key' =>
+                        $passkey['public_key'],
+                ],
+            ]);
+        }
+
         $token = $this->issueWebToken(
             $user,
             $request,
@@ -180,6 +240,136 @@ class AuthController extends Controller
             'authentication',
             $user,
             ['success' => true],
+            'user',
+            $user->id,
+        );
+
+        $this->telemetry->activity(
+            $request,
+            'login',
+            $user,
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' =>
+                'Authenticated successfully.',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'expires_in' =>
+                    self::TOKEN_LIFETIME_HOURS
+                    * 3600,
+            ],
+        ]);
+    }
+
+    public function verifyPasskeyLogin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'transaction_id' => [
+                'required',
+                'uuid',
+            ],
+            'credential' => [
+                'required',
+                'array',
+            ],
+        ]);
+
+        $challenge = \App\Models\WebAuthnChallenge::query()
+            ->whereKey($validated['transaction_id'])
+            ->where(
+                'purpose',
+                \App\Models\WebAuthnChallenge::PURPOSE_AUTHENTICATE
+            )
+            ->first();
+
+        if (! $challenge || ! $challenge->isUsable()) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Passkey verification session is invalid or expired.',
+            ], 422);
+        }
+
+        $user = User::query()
+            ->with('roles')
+            ->find($challenge->user_id);
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Passkey verification failed.',
+            ], 422);
+        }
+
+        $isAdministrator = $user->roles->contains(
+            fn ($role) => in_array(
+                $role->slug,
+                ['owner', 'administrator'],
+                true
+            )
+        );
+
+        if (! $isAdministrator) {
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Passkey verification failed.',
+            ], 403);
+        }
+
+        try {
+            app(
+                \App\Services\WebAuthn\WebAuthnService::class
+            )->verifyAuthentication(
+                $user,
+                $validated['transaction_id'],
+                $validated['credential']
+            );
+        } catch (\Throwable $exception) {
+            \Illuminate\Support\Facades\Log::warning(
+                'Admin WebAuthn authentication failed.',
+                [
+                    'user_id' => $user->id,
+                    'exception' => $exception->getMessage(),
+                ]
+            );
+
+            $this->telemetry->audit(
+                $request,
+                'auth.login_passkey_failed',
+                'authentication',
+                $user,
+                ['success' => false],
+                'user',
+                $user->id,
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Passkey verification failed.',
+            ], 422);
+        }
+
+        $token = $this->issueWebToken(
+            $user,
+            $request,
+        );
+
+        $this->telemetry->audit(
+            $request,
+            'auth.login',
+            'authentication',
+            $user,
+            [
+                'success' => true,
+                'passkey_verified' => true,
+            ],
             'user',
             $user->id,
         );

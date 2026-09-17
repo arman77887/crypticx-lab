@@ -67,4 +67,14 @@ class User extends Authenticatable
             'role_id'
         );
     }
+
+    public function webAuthnCredentials(): HasMany
+    {
+        return $this->hasMany(WebAuthnCredential::class);
+    }
+
+    public function webAuthnChallenges(): HasMany
+    {
+        return $this->hasMany(WebAuthnChallenge::class);
+    }
 }

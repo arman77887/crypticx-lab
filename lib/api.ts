@@ -28,6 +28,27 @@ type LoginResponse = {
 };
 
 
+type AdminPasskeyLoginChallengeResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    passkey_required: true;
+    transaction_id: string;
+    public_key: {
+      challenge: string;
+      rpId?: string;
+      timeout?: number;
+      userVerification?: UserVerificationRequirement;
+      allowCredentials?: Array<{
+        type: PublicKeyCredentialType;
+        id: string;
+        transports?: AuthenticatorTransport[];
+      }>;
+    };
+  };
+};
+
+
 export type RegisterResponse = {
   success: boolean;
   message: string;
@@ -69,6 +90,7 @@ export async function apiRequest<T>(
     path.startsWith("/admin/") ||
     path === "/auth/login" ||
     path === "/auth/register" ||
+    path === "/auth/passkey/authenticate/verify" ||
     path.startsWith("/security/devices");
 
   if (
@@ -193,7 +215,9 @@ export async function login(
   password: string,
   remember: boolean,
 ): Promise<LoginResponse> {
-  const response = await apiRequest<LoginResponse>("/auth/login", {
+  const response = await apiRequest<
+    LoginResponse | AdminPasskeyLoginChallengeResponse
+  >("/auth/login", {
     method: "POST",
     body: JSON.stringify({
       email,
@@ -201,14 +225,121 @@ export async function login(
     }),
   });
 
-  const storage = remember ? window.localStorage : window.sessionStorage;
+  let authenticatedResponse: LoginResponse;
+
+  if (
+    "passkey_required" in response.data &&
+    response.data.passkey_required === true
+  ) {
+    if (typeof window === "undefined") {
+      throw new Error(
+        "Administrator passkey verification requires a browser.",
+      );
+    }
+
+    if (
+      !window.PublicKeyCredential ||
+      typeof navigator.credentials?.get !== "function"
+    ) {
+      throw new Error(
+        "Passkeys are not supported by this browser or device.",
+      );
+    }
+
+    const serverOptions = response.data.public_key;
+
+    const publicKey: PublicKeyCredentialRequestOptions = {
+      ...serverOptions,
+      challenge: base64UrlToArrayBuffer(
+        serverOptions.challenge,
+      ),
+      allowCredentials: serverOptions.allowCredentials?.map(
+        (credential) => ({
+          ...credential,
+          id: base64UrlToArrayBuffer(credential.id),
+        }),
+      ),
+    };
+
+    let assertion: Credential | null;
+
+    try {
+      assertion = await navigator.credentials.get({
+        publicKey,
+      });
+    } catch {
+      throw new Error(
+        "Admin verification failed. Please try again.",
+      );
+    }
+
+    if (!(assertion instanceof PublicKeyCredential)) {
+      throw new Error(
+        "Admin verification status: Unverified",
+      );
+    }
+
+    const assertionResponse = assertion.response;
+
+    if (
+      !(assertionResponse instanceof AuthenticatorAssertionResponse)
+    ) {
+      throw new Error(
+        "Admin verification status: Unverified",
+      );
+    }
+
+    authenticatedResponse = await apiRequest<LoginResponse>(
+      "/auth/passkey/authenticate/verify",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          transaction_id: response.data.transaction_id,
+          credential: {
+            id: assertion.id,
+            rawId: bytesToBase64Url(assertion.rawId),
+            type: assertion.type,
+            authenticatorAttachment:
+              assertion.authenticatorAttachment ?? null,
+            response: {
+              clientDataJSON: bytesToBase64Url(
+                assertionResponse.clientDataJSON,
+              ),
+              authenticatorData: bytesToBase64Url(
+                assertionResponse.authenticatorData,
+              ),
+              signature: bytesToBase64Url(
+                assertionResponse.signature,
+              ),
+              userHandle: assertionResponse.userHandle
+                ? bytesToBase64Url(
+                    assertionResponse.userHandle,
+                  )
+                : null,
+            },
+            clientExtensionResults:
+              assertion.getClientExtensionResults(),
+          },
+        }),
+      },
+    );
+  } else {
+    authenticatedResponse = response as LoginResponse;
+  }
+
+  const storage = remember
+    ? window.localStorage
+    : window.sessionStorage;
 
   window.localStorage.removeItem("crypticx_token");
   window.sessionStorage.removeItem("crypticx_token");
 
-  storage.setItem("crypticx_token", response.data.token);
+  storage.setItem(
+    "crypticx_token",
+    authenticatedResponse.data.token,
+  );
 
-  return response;
+  return authenticatedResponse;
 }
 
 export async function logout(): Promise<void> {
@@ -2662,4 +2793,188 @@ export async function createBillingCheckout(
       }),
     },
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/* WebAuthn / Passkey enrollment                                              */
+/* -------------------------------------------------------------------------- */
+
+type PasskeyRegistrationOptionsResponse = {
+  success: boolean;
+  data: {
+    transaction_id: string;
+    public_key: {
+      challenge: string;
+      rp: {
+        id?: string;
+        name: string;
+      };
+      user: {
+        id: string;
+        name: string;
+        displayName: string;
+      };
+      pubKeyCredParams: PublicKeyCredentialParameters[];
+      timeout?: number;
+      excludeCredentials?: Array<{
+        type: PublicKeyCredentialType;
+        id: string;
+        transports?: AuthenticatorTransport[];
+      }>;
+      authenticatorSelection?: AuthenticatorSelectionCriteria;
+      attestation?: AttestationConveyancePreference;
+    };
+  };
+};
+
+type PasskeyRegistrationVerifyResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    id?: string;
+    name?: string | null;
+  };
+};
+
+function base64UrlToArrayBuffer(value: string): ArrayBuffer {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded =
+    normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+
+  const binary = window.atob(padded);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return bytes.buffer;
+}
+
+function bytesToBase64Url(value: ArrayBuffer): string {
+  const bytes = new Uint8Array(value);
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += 1) {
+    binary += String.fromCharCode(bytes[index]);
+  }
+
+  return window
+    .btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+export async function enrollPasskey(): Promise<PasskeyRegistrationVerifyResponse> {
+  if (typeof window === "undefined") {
+    throw new Error("Passkey enrollment requires a browser.");
+  }
+
+  if (
+    !window.PublicKeyCredential ||
+    typeof navigator.credentials?.create !== "function"
+  ) {
+    throw new Error(
+      "Passkeys are not supported by this browser or device.",
+    );
+  }
+
+  const optionsResponse =
+    await apiRequest<PasskeyRegistrationOptionsResponse>(
+      "/auth/passkey/register/options",
+      {
+        method: "POST",
+      },
+    );
+
+  const serverOptions = optionsResponse.data.public_key;
+
+  const publicKey: PublicKeyCredentialCreationOptions = {
+    ...serverOptions,
+    challenge: base64UrlToArrayBuffer(serverOptions.challenge),
+    user: {
+      ...serverOptions.user,
+      id: base64UrlToArrayBuffer(serverOptions.user.id),
+    },
+    excludeCredentials: serverOptions.excludeCredentials?.map(
+      (credential) => ({
+        ...credential,
+        id: base64UrlToArrayBuffer(credential.id),
+      }),
+    ),
+  };
+
+  const credential = await navigator.credentials.create({
+    publicKey,
+  });
+
+  if (!(credential instanceof PublicKeyCredential)) {
+    throw new Error("Passkey creation was cancelled or failed.");
+  }
+
+  const response = credential.response;
+
+  if (!(response instanceof AuthenticatorAttestationResponse)) {
+    throw new Error("Invalid passkey registration response.");
+  }
+
+  const transports =
+    typeof response.getTransports === "function"
+      ? response.getTransports()
+      : [];
+
+  return apiRequest<PasskeyRegistrationVerifyResponse>(
+    "/auth/passkey/register/verify",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        transaction_id: optionsResponse.data.transaction_id,
+        credential: {
+          id: credential.id,
+          rawId: bytesToBase64Url(credential.rawId),
+          type: credential.type,
+          authenticatorAttachment:
+            credential.authenticatorAttachment ?? null,
+          response: {
+            clientDataJSON: bytesToBase64Url(
+              response.clientDataJSON,
+            ),
+            attestationObject: bytesToBase64Url(
+              response.attestationObject,
+            ),
+            transports,
+          },
+          clientExtensionResults:
+            credential.getClientExtensionResults(),
+        },
+      }),
+    },
+  );
+}
+
+export type PasskeyStatusCredential = {
+  id: string;
+  name: string | null;
+  active: boolean;
+  transports: AuthenticatorTransport[] | null;
+  created_at: string | null;
+  last_used_at: string | null;
+  revoked_at: string | null;
+};
+
+export type PasskeyStatusResponse = {
+  success: boolean;
+  data: {
+    configured: boolean;
+    active_count: number;
+    total_count: number;
+    credentials: PasskeyStatusCredential[];
+  };
+};
+
+export async function getPasskeyStatus(): Promise<PasskeyStatusResponse> {
+  return apiRequest<PasskeyStatusResponse>("/auth/passkey/status", {
+    method: "GET",
+  });
 }

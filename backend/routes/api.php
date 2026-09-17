@@ -54,12 +54,32 @@ Route::prefix('v1')->group(function () {
         [PasswordRecoveryController::class, 'reset']
     )->middleware('throttle:5,1');
 
+    Route::post(
+        '/auth/passkey/authenticate/verify',
+        [AuthController::class, 'verifyPasskeyLogin']
+    )->middleware('throttle:10,1');
+
     Route::middleware([
         'auth:sanctum',
         'trusted.admin.device',
     ])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
+
+        Route::get('/auth/passkey/status', [
+            \App\Http\Controllers\Api\V1\PasskeyEnrollmentController::class,
+            'status',
+        ])->middleware('throttle:30,1');
+
+        Route::post('/auth/passkey/register/options', [
+            \App\Http\Controllers\Api\V1\PasskeyEnrollmentController::class,
+            'options',
+        ])->middleware('throttle:10,1');
+
+        Route::post('/auth/passkey/register/verify', [
+            \App\Http\Controllers\Api\V1\PasskeyEnrollmentController::class,
+            'verify',
+        ])->middleware('throttle:10,1');
 
         Route::get('/account/entitlements', [
             \App\Http\Controllers\Api\V1\AccountEntitlementController::class,
