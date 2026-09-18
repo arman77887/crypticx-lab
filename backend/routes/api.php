@@ -59,6 +59,11 @@ Route::prefix('v1')->group(function () {
         [AuthController::class, 'verifyPasskeyLogin']
     )->middleware('throttle:10,1');
 
+    Route::post('/contact', [
+        \App\Http\Controllers\Api\V1\ContactController::class,
+        'store',
+    ])->middleware('throttle:contact-submit');
+
     Route::middleware([
         'auth:sanctum',
         'trusted.admin.device',

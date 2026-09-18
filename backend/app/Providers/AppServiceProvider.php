@@ -188,6 +188,19 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
+        RateLimiter::for(
+            'contact-submit',
+            function (Request $request): Limit {
+                $ip = (string) (
+                    $request->ip()
+                    ?: 'unknown'
+                );
+
+                return Limit::perMinute(5)
+                    ->by('contact-submit-ip:'.$ip);
+            }
+        );
+
         Event::listen(
             Looping::class,
             function (Looping $event): void {
