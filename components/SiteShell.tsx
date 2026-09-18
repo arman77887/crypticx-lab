@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function SiteShell({
   children,
@@ -40,6 +41,7 @@ export default function SiteShell({
 
       <div className="relative z-10">
         {children}
+        <Footer />
       </div>
     </div>
   );
