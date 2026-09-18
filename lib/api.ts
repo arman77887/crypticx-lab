@@ -1052,6 +1052,13 @@ export async function runWebSecurityAnalysis(url: string) {
   });
 }
 
+export async function runPhishingLinkAnalysis(url: string) {
+  return apiRequest<unknown>("/tools/phishing-link-analyzer", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}
+
 export async function runApiSecurityAnalysis(
   targetId: string,
 ) {

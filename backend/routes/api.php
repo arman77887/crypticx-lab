@@ -115,6 +115,12 @@ Route::prefix('v1')->group(function () {
         ])->middleware('throttle:20,1');
 
 
+        Route::post('/tools/phishing-link-analyzer', [
+            \App\Http\Controllers\Api\V1\PhishingLinkAnalyzerController::class,
+            'analyze',
+        ])->middleware('throttle:30,1');
+
+
         Route::post('/tools/api-security', [
             \App\Http\Controllers\Api\V1\ApiSecurityToolController::class,
             'analyze',

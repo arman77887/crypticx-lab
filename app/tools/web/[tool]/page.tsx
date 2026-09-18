@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   getStoredToken,
+  runPhishingLinkAnalysis,
   runWebSecurityAnalysis,
 } from "@/lib/api";
 
@@ -38,6 +39,11 @@ const tools = {
     title: "CORS Review",
     description:
       "Inspect cross-origin resource sharing response configuration.",
+  },
+  "phishing-link-analyzer": {
+    title: "Phishing Link Analyzer",
+    description:
+      "Inspect a link for static phishing and URL deception indicators without visiting the destination.",
   },
 } as const;
 
@@ -79,7 +85,10 @@ export default function WebSecurityToolPage() {
       setError("");
       setData(null);
 
-      const response = await runWebSecurityAnalysis(url.trim());
+      const response =
+        slug === "phishing-link-analyzer"
+          ? await runPhishingLinkAnalysis(url.trim())
+          : await runWebSecurityAnalysis(url.trim());
 
       if (!isRecord(response) || !isRecord(response.data)) {
         throw new Error("Invalid analysis response.");
@@ -176,14 +185,103 @@ export default function WebSecurityToolPage() {
 
         {data && (
           <section className="mt-8 space-y-5">
-            <div className="cx-card p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-red-400">
-                Target
-              </p>
-              <p className="mt-2 break-all font-bold">
-                {str(data.url)}
-              </p>
-            </div>
+            {slug === "phishing-link-analyzer" && (
+              <>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="cx-card p-5">
+                    <p className="text-xs font-bold uppercase text-red-400">
+                      Risk Score
+                    </p>
+                    <p className="mt-2 text-3xl font-black">
+                      {String(data.risk_score ?? 0)}/100
+                    </p>
+                  </div>
+
+                  <div className="cx-card p-5">
+                    <p className="text-xs font-bold uppercase text-red-400">
+                      Risk Level
+                    </p>
+                    <p className="mt-2 text-3xl font-black uppercase">
+                      {str(data.risk_level)}
+                    </p>
+                  </div>
+
+                  <div className="cx-card p-5">
+                    <p className="text-xs font-bold uppercase text-red-400">
+                      Indicators
+                    </p>
+                    <p className="mt-2 text-3xl font-black">
+                      {String(data.indicator_count ?? 0)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="cx-card p-6">
+                  <p className="text-xs font-bold uppercase text-red-400">
+                    Assessment
+                  </p>
+                  <p className="mt-3 leading-7 text-white/70">
+                    {str(data.assessment)}
+                  </p>
+                  <p className="mt-3 text-xs text-white/35">
+                    Static analysis only. CrypticX Lab did not visit
+                    or connect to the submitted destination.
+                  </p>
+                </div>
+
+                <div className="cx-card p-6">
+                  <p className="text-xs font-bold uppercase text-red-400">
+                    Hostname
+                  </p>
+                  <p className="mt-2 break-all font-bold">
+                    {str(data.hostname)}
+                  </p>
+                  <p className="mt-2 break-all text-sm text-white/45">
+                    {str(data.normalized_url)}
+                  </p>
+                </div>
+
+                {Array.isArray(data.indicators) &&
+                  data.indicators.filter(isRecord).length > 0 && (
+                    <div className="space-y-3">
+                      {data.indicators
+                        .filter(isRecord)
+                        .map((indicator, index) => (
+                          <div
+                            key={index}
+                            className="cx-card p-5"
+                          >
+                            <div className="flex flex-col justify-between gap-3 sm:flex-row">
+                              <div>
+                                <p className="font-black">
+                                  {str(indicator.title)}
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-white/50">
+                                  {str(indicator.detail)}
+                                </p>
+                              </div>
+
+                              <span className="self-start rounded-full bg-red-500/10 px-3 py-1 text-xs font-bold uppercase text-red-300">
+                                {str(indicator.severity)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+              </>
+            )}
+
+            {slug !== "phishing-link-analyzer" && (
+              <div className="cx-card p-6">
+                <p className="text-xs font-bold uppercase tracking-wider text-red-400">
+                  Target
+                </p>
+                <p className="mt-2 break-all font-bold">
+                  {str(data.url)}
+                </p>
+              </div>
+            )}
 
             {slug === "http-analysis" && http && (
               <div className="grid gap-4 sm:grid-cols-2">

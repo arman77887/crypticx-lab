@@ -13,31 +13,43 @@ const tools = [
     icon: "◎",
     title: "Web Security",
     text: "Assess headers, cookies, CORS, HTTP behavior and security posture.",
+    href: "/tools",
+  },
+  {
+    icon: "⚠",
+    title: "Phishing Link Analyzer",
+    text: "Inspect suspicious links for static phishing, deception and URL obfuscation indicators without visiting them.",
+    href: "/tools/web/phishing-link-analyzer",
   },
   {
     icon: "⌁",
     title: "Network Analysis",
     text: "Inspect authorized network exposure with bounded, defensive analysis.",
+    href: "/tools",
   },
   {
     icon: "◌",
     title: "DNS Intelligence",
     text: "Inspect records, DNS health and authorized subdomain intelligence.",
+    href: "/tools",
   },
   {
     icon: "◇",
     title: "SSL / TLS",
     text: "Review certificates, protocol posture, ciphers and chain information.",
+    href: "/tools",
   },
   {
     icon: "⌘",
     title: "API Security",
     text: "Analyze safe API security signals without state-changing requests.",
+    href: "/tools",
   },
   {
     icon: "▣",
     title: "Data Lab",
     text: "Analyze structured datasets and security-oriented data patterns.",
+    href: "/tools",
   },
 ];
 
@@ -489,7 +501,7 @@ export default function Home() {
             {tools.map((tool, index) => (
               <Link
                 key={tool.title}
-                href="/tools"
+                href={tool.href}
                 className="cx-card-3d group relative overflow-hidden rounded-3xl p-6 transition duration-500 hover:-translate-y-2 hover:border-red-500/25"
               >
                 <div className="pointer-events-none absolute right-[-50px] top-[-50px] h-32 w-32 rounded-full bg-red-500/0 blur-3xl transition duration-500 group-hover:bg-red-500/10" />

@@ -3,7 +3,13 @@ const categories = [
     icon: "◎",
     title: "Web Security",
     description: "Assess web applications for common security weaknesses and configuration issues.",
-    tools: ["Security Headers", "HTTP Analysis", "Cookie Security", "CORS Review"],
+    tools: [
+      "Security Headers",
+      "HTTP Analysis",
+      "Cookie Security",
+      "CORS Review",
+      "Phishing Link Analyzer",
+    ],
   },
   {
     icon: "⌁",
@@ -168,6 +174,9 @@ export default function ToolsPage() {
                           : category.title === "Web Security" &&
                             tool === "CORS Review"
                           ? "/tools/web/cors-review"
+                          : category.title === "Web Security" &&
+                            tool === "Phishing Link Analyzer"
+                          ? "/tools/web/phishing-link-analyzer"
                           : category.title === "API Security" &&
                             tool === "Endpoint Inspector"
                           ? "/tools/api/endpoint-inspector"
