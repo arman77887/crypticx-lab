@@ -76,8 +76,14 @@ export default function ToolsPage() {
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <header className="flex h-20 items-center justify-between">
           <a href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#09090b] text-sm font-black shadow-[7px_7px_14px_#000000,-7px_-7px_14px_#171719]">
-              CX
+            <div className="flex h-11 w-11 items-center justify-center">
+              <img
+                src="/brand/crypticx2.png"
+                alt="CrypticX Lab"
+                width={48}
+                height={48}
+                className="h-11 w-11 object-contain"
+              />
             </div>
             <div>
               <div className="text-lg font-bold tracking-tight">CrypticX Lab</div>

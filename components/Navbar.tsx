@@ -96,6 +96,7 @@ export default function Navbar() {
 
   const publicLinks: NavLink[] = [
     { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
     { href: "/tools", label: "Tools" },
     { href: "/scanner", label: "Scanner" },
     { href: "/labs", label: "Security Labs" },
@@ -106,6 +107,7 @@ export default function Navbar() {
 
   const userLinks: NavLink[] = [
     { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
     { href: "/dashboard", label: "Dashboard" },
     { href: "/scanner", label: "Scanner" },
     { href: "/findings", label: "Findings" },
@@ -116,6 +118,7 @@ export default function Navbar() {
 
   const adminLinks: NavLink[] = [
     { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
     { href: "/admin", label: "Admin Console" },
     { href: "/scanner", label: "Scanner" },
     { href: "/findings", label: "Findings" },
