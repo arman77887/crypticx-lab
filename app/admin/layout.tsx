@@ -72,7 +72,13 @@ export default function AdminLayout({
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050505] px-6 text-white">
         <div className="w-full max-w-sm rounded-2xl border border-white/[0.07] bg-[#09090b] p-6 text-center shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-          <div className="mx-auto h-2 w-2 rounded-full bg-white/80" />
+          <img
+            src="/brand/crypticx2.png"
+            alt="CrypticX Lab"
+            width={72}
+            height={72}
+            className="mx-auto h-16 w-16 object-contain"
+          />
 
           <div className="mt-4 text-[10px] font-bold uppercase tracking-[0.25em] text-white/35">
             CrypticX Security
@@ -94,9 +100,13 @@ export default function AdminLayout({
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050505] px-6 text-white">
         <div className="w-full max-w-md rounded-2xl border border-white/[0.07] bg-[#09090b] p-7 text-center shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-sm">
-            !
-          </div>
+          <img
+            src="/brand/crypticx2.png"
+            alt="CrypticX Lab"
+            width={72}
+            height={72}
+            className="mx-auto h-16 w-16 object-contain"
+          />
 
           <div className="mt-5 text-[10px] font-bold uppercase tracking-[0.25em] text-white/35">
             Access Control
@@ -128,7 +138,25 @@ export default function AdminLayout({
       <AdminSidebar />
 
       <div className="min-h-screen lg:pl-64">
-        <div className="border-b border-white/[0.06] bg-[#070708] px-4 py-3 lg:hidden">
+        <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#070708] px-4 py-3 lg:hidden">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            aria-label="CrypticX Lab home"
+            className="flex items-center gap-2"
+          >
+            <img
+              src="/brand/crypticx2.png"
+              alt="CrypticX Lab"
+              width={44}
+              height={44}
+              className="h-10 w-10 object-contain"
+            />
+            <span className="text-sm font-bold text-white">
+              CrypticX Lab
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => setMobileOpen((value) => !value)}
