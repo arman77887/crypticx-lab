@@ -28,6 +28,10 @@ export const metadata: Metadata = {
 
   applicationName: "CrypticX Lab",
 
+  alternates: {
+    canonical: "/",
+  },
+
   keywords: [
     "CrypticX Lab",
     "cybersecurity",
