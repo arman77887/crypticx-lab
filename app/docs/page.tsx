@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 
 const sections = [
   {
@@ -53,7 +52,6 @@ const quickLinks = [
 export default function DocsPage() {
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
       <section className="mx-auto max-w-7xl px-5 pb-16 pt-16 sm:px-8 lg:px-10 lg:pt-24">
         <div className="max-w-3xl">

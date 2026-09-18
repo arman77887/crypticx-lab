@@ -32,6 +32,7 @@ class Target extends Model
     protected function casts(): array
     {
         return [
+            'port' => 'integer',
             'authorization_confirmed' => 'boolean',
             'authorization_confirmed_at' => 'datetime',
             'metadata' => 'array',

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 import { FormEvent, useState } from "react";
 import { apiRequest } from "@/lib/api";
 
@@ -138,9 +137,7 @@ export default function ContactPage() {
   }
 
   return (
-    <>
-      <Navbar />
-      <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
+    <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
 
       <section className="mx-auto max-w-7xl px-5 pb-16 pt-16 sm:px-8 lg:px-10 lg:pt-24">
         <div className="grid gap-12 lg:grid-cols-[1fr_0.9fr] lg:items-end">
@@ -531,6 +528,5 @@ export default function ContactPage() {
         </div>
       </footer>
     </main>
-    </>
   );
 }

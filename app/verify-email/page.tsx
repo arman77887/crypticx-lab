@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import Navbar from "@/components/Navbar";
 
 export default function VerifyEmailPage() {
   const [email, setEmail] = useState("");
@@ -13,13 +12,18 @@ export default function VerifyEmailPage() {
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
       <section className="mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl items-center justify-center px-5 py-16 sm:px-8 lg:px-10">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <div className="cx-raised-sm mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
-              <span className="text-xl font-bold tracking-tight">CX</span>
+              <img
+                src="/brand/crypticx2.png"
+                alt="CrypticX Lab"
+                width={56}
+                height={56}
+                className="h-14 w-14 object-contain"
+              />
             </div>
 
             <h1 className="mt-7 text-3xl font-semibold tracking-tight">

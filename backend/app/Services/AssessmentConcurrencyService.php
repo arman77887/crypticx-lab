@@ -4,36 +4,46 @@ namespace App\Services;
 
 use App\Models\Assessment;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class AssessmentConcurrencyService
 {
     /*
      * PostgreSQL transaction advisory lock namespace dedicated to
      * assessment concurrency admission.
-     *
-     * Every worker attempting queued -> running admission serializes
-     * through this lock before counting current running assessments.
      */
     private const ADVISORY_LOCK_KEY = 481516234;
 
     public function hasCapacity(): bool
     {
-        if (DB::getDriverName() !== 'pgsql') {
-            throw new RuntimeException(
-                'Assessment concurrency admission requires PostgreSQL.'
+        $driver = DB::getDriverName();
+
+        /*
+         * PostgreSQL production path:
+         * serialize admission across multiple workers using a
+         * transaction-level advisory lock.
+         */
+        if ($driver === 'pgsql') {
+            DB::select(
+                'SELECT pg_advisory_xact_lock(?)',
+                [self::ADVISORY_LOCK_KEY]
             );
         }
 
         /*
-         * The caller must already be inside a database transaction.
-         * pg_advisory_xact_lock is automatically released when that
-         * transaction commits or rolls back.
+         * SQLite fallback:
+         *
+         * CrypticX Lab's current lightweight deployment runs exactly one
+         * queue worker, so execution is already serialized at worker level.
+         *
+         * Do NOT scale to multiple queue workers while SQLite is in use.
+         * Multi-worker production deployments must use PostgreSQL so the
+         * advisory lock above can provide cross-worker admission safety.
          */
-        DB::select(
-            'SELECT pg_advisory_xact_lock(?)',
-            [self::ADVISORY_LOCK_KEY]
-        );
+        if (! in_array($driver, ['pgsql', 'sqlite'], true)) {
+            throw new \RuntimeException(
+                "Unsupported database driver for assessment concurrency: {$driver}"
+            );
+        }
 
         $running = Assessment::query()
             ->where('status', 'running')

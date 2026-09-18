@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
 import {
   downloadReportPdf,
   getReport,
@@ -268,7 +267,6 @@ export default function ReportDetailPage() {
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
       <section className="mx-auto max-w-7xl px-5 pb-24 pt-28 sm:px-8">
         <Link

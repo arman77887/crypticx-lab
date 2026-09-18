@@ -2,17 +2,14 @@
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
 import { register } from "@/lib/api";
 
 export default function RegisterPage() {
-  const router = useRouter();
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,6 +37,7 @@ export default function RegisterPage() {
     const name = `${firstName} ${lastName}`.trim();
 
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -50,17 +48,7 @@ export default function RegisterPage() {
         passwordConfirmation,
       );
 
-      const roles =
-        response.data.user.roles?.map((role) =>
-          role.name.toLowerCase(),
-        ) ?? [];
-
-      const isAdmin =
-        roles.includes("owner") ||
-        roles.includes("administrator");
-
-      router.push(isAdmin ? "/admin" : "/dashboard");
-      router.refresh();
+      setSuccess(response.message);
     } catch (err) {
       setError(
         err instanceof Error
@@ -74,13 +62,18 @@ export default function RegisterPage() {
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
       <section className="mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl items-center justify-center px-5 py-16 sm:px-8 lg:px-10">
         <div className="w-full max-w-lg">
           <div className="mb-8 text-center">
             <div className="cx-raised-sm mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
-              <span className="text-xl font-bold tracking-tight">CX</span>
+              <img
+                src="/brand/crypticx2.png"
+                alt="CrypticX Lab"
+                width={56}
+                height={56}
+                className="h-14 w-14 object-contain"
+              />
             </div>
 
             <h1 className="mt-7 text-3xl font-semibold tracking-tight">
@@ -93,6 +86,25 @@ export default function RegisterPage() {
           </div>
 
           <div className="cx-card rounded-[30px] p-7 sm:p-9">
+            {success && (
+              <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-4 text-sm leading-6 text-emerald-300">
+                <div className="font-semibold">
+                  Registration successful
+                </div>
+                <div className="mt-1 text-emerald-200/70">
+                  {success}
+                </div>
+                <div className="mt-3">
+                  <Link
+                    href="/login"
+                    className="font-semibold underline underline-offset-4"
+                  >
+                    Go to sign in
+                  </Link>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit}>
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
@@ -253,19 +265,6 @@ export default function RegisterPage() {
               </button>
             </form>
 
-            <div className="my-7 flex items-center gap-4">
-              <div className="cx-divider flex-1" />
-              <span className="text-xs text-[var(--cx-subtle)]">OR</span>
-              <div className="cx-divider flex-1" />
-            </div>
-
-            <button
-              type="button"
-              className="cx-button cx-button-secondary w-full"
-            >
-              Register with Passkey
-            </button>
-
             <p className="mt-7 text-center text-sm text-[var(--cx-muted)]">
               Already have an account?{" "}
               <Link
@@ -279,9 +278,9 @@ export default function RegisterPage() {
 
           <div className="cx-inset-sm mt-6 rounded-2xl p-4">
             <p className="text-center text-xs leading-5 text-[var(--cx-muted)]">
-              Account registration and authenticated sessions are connected
-              to the CrypticX API. Email verification and MFA/passkey
-              enforcement are not enabled yet.
+              Account registration and authenticated sessions are securely
+              connected to the CrypticX API. Use your registered email and
+              password to sign in.
             </p>
           </div>
         </div>

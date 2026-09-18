@@ -82,70 +82,6 @@ class AuthController extends Controller
 
         $user->load('roles');
 
-        $isAdministrator = $user->roles->contains(
-            fn ($role) => in_array(
-                $role->slug,
-                ['owner', 'administrator'],
-                true
-            )
-        );
-
-        if ($isAdministrator) {
-            $activePasskeyCount = $user
-                ->webAuthnCredentials()
-                ->whereNull('revoked_at')
-                ->count();
-
-            if ($activePasskeyCount < 1) {
-                $this->telemetry->audit(
-                    $request,
-                    'auth.login_passkey_missing',
-                    'authentication',
-                    $user,
-                    ['success' => false],
-                    'user',
-                    $user->id,
-                );
-
-                return response()->json([
-                    'success' => false,
-                    'message' =>
-                        'Administrator passkey verification is required.',
-                ], 403);
-            }
-
-            $passkey = app(
-                \App\Services\WebAuthn\WebAuthnService::class
-            )->createAuthenticationOptions($user);
-
-            $this->telemetry->audit(
-                $request,
-                'auth.login_passkey_required',
-                'authentication',
-                $user,
-                ['success' => true],
-                'user',
-                $user->id,
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' =>
-                    'Passkey verification required.',
-                'data' => [
-                    'passkey_required' => true,
-                    'transaction_id' =>
-                        $passkey['transaction_id'],
-                    'public_key' =>
-                        $passkey['public_key'],
-                ],
-            ]);
-        }
-
-        $token = $this->issueWebToken(
-            $user,
-            $request,
-        );
 
         $this->telemetry->audit(
             $request,
@@ -166,14 +102,10 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' =>
-                'Account created successfully.',
+                'Account created. Waiting for administrator approval.',
             'data' => [
                 'user' => $user,
-                'token' => $token,
-                'token_type' => 'Bearer',
-                'expires_in' =>
-                    self::TOKEN_LIFETIME_HOURS
-                    * 3600,
+                'approval_required' => true,
             ],
         ], 201);
     }
@@ -228,6 +160,87 @@ class AuthController extends Controller
         }
 
         $user->load('roles');
+
+        $isAdministrator = $user->roles->contains(
+            fn ($role) => in_array(
+                $role->slug,
+                ['owner', 'administrator'],
+                true
+            )
+        );
+
+        if (
+            ! $isAdministrator
+            && $user->email_verified_at === null
+        ) {
+            $this->telemetry->audit(
+                $request,
+                'auth.login_pending_approval',
+                'authentication',
+                $user,
+                ['success' => false],
+                'user',
+                $user->id,
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' =>
+                    'Your account is awaiting administrator approval.',
+            ], 403);
+        }
+
+        if ($isAdministrator) {
+            $activePasskeyCount = $user
+                ->webAuthnCredentials()
+                ->whereNull('revoked_at')
+                ->count();
+
+            if ($activePasskeyCount < 1) {
+                $this->telemetry->audit(
+                    $request,
+                    'auth.login_passkey_missing',
+                    'authentication',
+                    $user,
+                    ['success' => false],
+                    'user',
+                    $user->id,
+                );
+
+                return response()->json([
+                    'success' => false,
+                    'message' =>
+                        'Administrator passkey verification is required.',
+                ], 403);
+            }
+
+            $passkey = app(
+                \App\Services\WebAuthn\WebAuthnService::class
+            )->createAuthenticationOptions($user);
+
+            $this->telemetry->audit(
+                $request,
+                'auth.login_passkey_required',
+                'authentication',
+                $user,
+                ['success' => true],
+                'user',
+                $user->id,
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' =>
+                    'Passkey verification required.',
+                'data' => [
+                    'passkey_required' => true,
+                    'transaction_id' =>
+                        $passkey['transaction_id'],
+                    'public_key' =>
+                        $passkey['public_key'],
+                ],
+            ]);
+        }
 
         $token = $this->issueWebToken(
             $user,

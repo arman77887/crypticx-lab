@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\RunAssessment;
 use App\Models\Assessment;
 use App\Models\MonitoringPolicy;
+use App\Models\Subscription;
 use App\Models\Target;
 use App\Models\User;
 use App\Services\MonitoringDispatcherService;
@@ -18,6 +19,7 @@ class MonitoringDispatcherTest extends TestCase
     private array $targetIds = [];
     private array $assessmentIds = [];
     private array $policyIds = [];
+    private array $subscriptionIds = [];
 
     protected function tearDown(): void
     {
@@ -36,6 +38,12 @@ class MonitoringDispatcherTest extends TestCase
         if ($this->targetIds !== []) {
             Target::query()
                 ->whereIn('id', $this->targetIds)
+                ->delete();
+        }
+
+        if ($this->subscriptionIds !== []) {
+            Subscription::query()
+                ->whereIn('id', $this->subscriptionIds)
                 ->delete();
         }
 
@@ -60,6 +68,17 @@ class MonitoringDispatcherTest extends TestCase
         $user->save();
 
         $this->userIds[] = $user->id;
+
+        $subscription = new Subscription();
+        $subscription->id = (string) Str::uuid();
+        $subscription->user_id = $user->id;
+        $subscription->plan_code = 'professional';
+        $subscription->status = Subscription::STATUS_ACTIVE;
+        $subscription->current_period_start = now()->subMinute();
+        $subscription->current_period_end = now()->addDay();
+        $subscription->save();
+
+        $this->subscriptionIds[] = $subscription->id;
 
         return $user;
     }

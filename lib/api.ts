@@ -54,8 +54,7 @@ export type RegisterResponse = {
   message: string;
   data: {
     user: ApiUser;
-    token: string;
-    token_type: string;
+    approval_required: boolean;
   };
 };
 
@@ -201,11 +200,6 @@ export async function register(
 
   window.localStorage.removeItem("crypticx_token");
   window.sessionStorage.removeItem("crypticx_token");
-
-  window.sessionStorage.setItem(
-    "crypticx_token",
-    response.data.token,
-  );
 
   return response;
 }
@@ -1293,6 +1287,20 @@ export async function updateAdminUserRole(
     method: "PATCH",
     body: JSON.stringify({ role }),
   });
+}
+
+
+export async function updateAdminUserVerification(
+  userId: string,
+  verified: boolean,
+): Promise<{ data: ApiUser }> {
+  return apiRequest<{ data: ApiUser }>(
+    `/users/${userId}/verification`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ verified }),
+    },
+  );
 }
 
 export async function deleteAdminUser(

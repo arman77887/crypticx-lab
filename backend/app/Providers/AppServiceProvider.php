@@ -189,6 +189,55 @@ class AppServiceProvider extends ServiceProvider
         );
 
         RateLimiter::for(
+            'auth-password-forgot',
+            function (Request $request): array {
+                $ip = (string) (
+                    $request->ip()
+                    ?: 'unknown'
+                );
+
+                $identityHash = hash(
+                    'sha256',
+                    strtolower(
+                        trim(
+                            (string) $request->input(
+                                'email',
+                                ''
+                            )
+                        )
+                    )
+                );
+
+                return [
+                    Limit::perMinute(6)
+                        ->by('auth-password-forgot-ip:'.$ip),
+
+                    Limit::perMinute(3)
+                        ->by(
+                            'auth-password-forgot-identity:'
+                            .$identityHash
+                            .'|ip:'
+                            .$ip
+                        ),
+                ];
+            }
+        );
+
+
+        RateLimiter::for(
+            'auth-password-reset',
+            function (Request $request): Limit {
+                $ip = (string) (
+                    $request->ip()
+                    ?: 'unknown'
+                );
+
+                return Limit::perMinute(5)
+                    ->by('auth-password-reset-ip:'.$ip);
+            }
+        );
+
+        RateLimiter::for(
             'contact-submit',
             function (Request $request): Limit {
                 $ip = (string) (
@@ -200,6 +249,7 @@ class AppServiceProvider extends ServiceProvider
                     ->by('contact-submit-ip:'.$ip);
             }
         );
+
 
         Event::listen(
             Looping::class,

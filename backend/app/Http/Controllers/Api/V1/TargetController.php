@@ -53,13 +53,19 @@ class TargetController extends Controller
             ], 422);
         }
 
+        $scheme = strtolower($parts['scheme'] ?? 'https');
+
+        $port = isset($parts['port'])
+            ? (int) $parts['port']
+            : ($scheme === 'https' ? 443 : 80);
+
         $target = Target::create([
             'user_id' => $request->user()->id,
             'name' => $request->validated('name'),
             'url' => $url,
             'hostname' => strtolower($parts['host']),
-            'scheme' => strtolower($parts['scheme'] ?? 'https'),
-            'port' => $parts['port'] ?? null,
+            'scheme' => $scheme,
+            'port' => $port,
             'authorization_confirmed' => true,
             'authorization_confirmed_at' => now(),
             'authorization_method' => $request->validated('authorization_method'),

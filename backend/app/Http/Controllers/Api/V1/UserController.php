@@ -131,6 +131,69 @@ class UserController extends Controller
         return new UserResource($user->fresh()->load('roles'));
     }
 
+    public function updateVerification(
+        Request $request,
+        User $user
+    ): UserResource|JsonResponse {
+        $validated = $request->validate([
+            'verified' => ['required', 'boolean'],
+        ]);
+
+        $actor = $request->user();
+        $targetIsOwner = $this->isOwner($user);
+        $actorIsOwner = $this->isOwner($actor);
+
+        if ($targetIsOwner && !$actorIsOwner) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only an Owner can change Owner verification.',
+            ], 403);
+        }
+
+        if (
+            $targetIsOwner &&
+            $validated['verified'] === false
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Owner verification cannot be removed.',
+            ], 422);
+        }
+
+        $wasVerified = $user->email_verified_at !== null;
+
+        $user->forceFill([
+            'email_verified_at' => $validated['verified']
+                ? ($user->email_verified_at ?? now())
+                : null,
+        ])->save();
+
+        $user->tokens()->delete();
+
+        if (
+            $validated['verified'] === true
+            && ! $wasVerified
+        ) {
+            try {
+                $user->notify(
+                    new \App\Notifications\AccountVerifiedNotification()
+                );
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::warning(
+                    'Account approval email notification failed.',
+                    [
+                        'user_id' => $user->id,
+                        'exception' => $exception->getMessage(),
+                    ]
+                );
+            }
+        }
+
+        return new UserResource(
+            $user->fresh()->load('roles')
+        );
+    }
+
     public function destroy(
         Request $request,
         User $user

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
 import {
   DashboardSummaryResponse,
   getDashboardSummary,
@@ -74,6 +73,7 @@ export default function Home() {
     useState<DashboardSummaryResponse["data"] | null>(null);
 
   const [authChecked, setAuthChecked] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -81,6 +81,10 @@ export default function Home() {
 
     async function loadLiveRisk() {
       const token = getStoredToken();
+
+      if (mounted) {
+        setHasToken(Boolean(token));
+      }
 
       if (!token) {
         if (mounted) {
@@ -255,7 +259,6 @@ export default function Home() {
       <div className="pointer-events-none fixed right-[-100px] top-[200px] h-[320px] w-[320px] rounded-full bg-red-600/10 blur-[120px]" />
 
       <div className="relative z-10 mx-auto max-w-7xl px-5 sm:px-8">
-        <Navbar />
 
         <section className="relative py-20 sm:py-28 lg:py-32">
           <div className="grid items-center gap-16 lg:grid-cols-[1.05fr_.95fr]">
@@ -286,7 +289,7 @@ export default function Home() {
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/scanner"
+                  href={hasToken ? "/scanner" : "/login"}
                   className="rounded-2xl border border-red-500/40 bg-red-600 px-6 py-4 text-center text-sm font-black text-white shadow-[0_15px_50px_rgba(180,0,0,0.25)] transition duration-300 hover:-translate-y-1 hover:bg-red-500"
                 >
                   Start Assessment
@@ -626,7 +629,7 @@ export default function Home() {
 
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link
-                  href="/scanner"
+                  href={hasToken ? "/scanner" : "/login"}
                   className="rounded-2xl bg-red-600 px-7 py-4 text-sm font-black text-white shadow-[0_15px_45px_rgba(180,0,0,.25)] transition hover:-translate-y-1 hover:bg-red-500"
                 >
                   Start Assessment

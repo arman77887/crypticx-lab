@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MonitoringPolicy;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Subscription;
 use App\Models\Target;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ class MonitoringPolicyApiTest extends TestCase
     private array $createdUserIds = [];
     private array $createdTargetIds = [];
     private array $createdRoleIds = [];
+    private array $createdSubscriptionIds = [];
 
     protected function tearDown(): void
     {
@@ -51,6 +53,12 @@ class MonitoringPolicyApiTest extends TestCase
                 ->delete();
         }
 
+        if ($this->createdSubscriptionIds !== []) {
+            Subscription::query()
+                ->whereIn('id', $this->createdSubscriptionIds)
+                ->delete();
+        }
+
         if ($this->createdUserIds !== []) {
             User::query()
                 ->whereIn('id', $this->createdUserIds)
@@ -78,6 +86,17 @@ class MonitoringPolicyApiTest extends TestCase
         $user->save();
 
         $this->createdUserIds[] = $user->id;
+
+        $subscription = new Subscription();
+        $subscription->id = (string) Str::uuid();
+        $subscription->user_id = $user->id;
+        $subscription->plan_code = 'professional';
+        $subscription->status = Subscription::STATUS_ACTIVE;
+        $subscription->current_period_start = now()->subMinute();
+        $subscription->current_period_end = now()->addDay();
+        $subscription->save();
+
+        $this->createdSubscriptionIds[] = $subscription->id;
 
         return $user;
     }

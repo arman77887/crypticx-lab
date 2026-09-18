@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import Navbar from "@/components/Navbar";
 import {
   initializePaddle,
   type Paddle,
@@ -245,7 +244,6 @@ export default function PricingPage() {
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
       <section className="mx-auto max-w-7xl px-5 pb-14 pt-16 text-center sm:px-8 lg:px-10 lg:pt-24">
         <div className="cx-raised-sm mx-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cx-subtle)]">

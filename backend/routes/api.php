@@ -42,7 +42,7 @@ Route::prefix('v1')->group(function () {
     Route::post(
         '/auth/password/forgot',
         [PasswordRecoveryController::class, 'forgot']
-    )->middleware('throttle:3,1');
+    )->middleware('throttle:auth-password-forgot');
 
     Route::post(
         '/auth/password/verify',
@@ -52,7 +52,8 @@ Route::prefix('v1')->group(function () {
     Route::post(
         '/auth/password/reset',
         [PasswordRecoveryController::class, 'reset']
-    )->middleware('throttle:5,1');
+    )->middleware('throttle:auth-password-reset');
+
 
     Route::post(
         '/auth/passkey/authenticate/verify',
@@ -488,6 +489,12 @@ Route::prefix('v1')->group(function () {
                 \App\Http\Controllers\Api\V1\UserController::class,
                 'updateRole',
             ]);
+
+            Route::patch('/users/{user}/verification', [
+                \App\Http\Controllers\Api\V1\UserController::class,
+                'updateVerification',
+            ]);
+
 
             Route::delete('/users/{user}', [
                 \App\Http\Controllers\Api\V1\UserController::class,

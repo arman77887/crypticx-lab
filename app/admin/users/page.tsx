@@ -9,6 +9,7 @@ import {
   getAdminUsers,
   updateAdminUser,
   updateAdminUserRole,
+  updateAdminUserVerification,
 } from "@/lib/api";
 
 const roles = [
@@ -224,6 +225,39 @@ export default function AdminUsersPage() {
         err instanceof Error
           ? err.message
           : "Unable to update user.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleVerification(
+    user: ApiUser,
+    verified: boolean,
+  ) {
+    const action = verified ? "verify" : "mark as unverified";
+
+    const confirmed = window.confirm(
+      `${action === "verify" ? "Verify" : "Mark as unverified"} ${user.name} (${user.email})?`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setBusy(true);
+      setError("");
+
+      await updateAdminUserVerification(
+        user.id,
+        verified,
+      );
+
+      await loadUsers();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to update verification.",
       );
     } finally {
       setBusy(false);
@@ -497,6 +531,36 @@ export default function AdminUsersPage() {
                           className="cx-button cx-button-secondary rounded-xl px-4 py-2 text-xs font-semibold"
                         >
                           Manage
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={
+                            busy ||
+                            (verified &&
+                              role?.slug === "owner")
+                          }
+                          onClick={() =>
+                            void handleVerification(
+                              user,
+                              !verified,
+                            )
+                          }
+                          title={
+                            verified &&
+                            role?.slug === "owner"
+                              ? "Owner verification cannot be removed."
+                              : undefined
+                          }
+                          className={
+                            verified
+                              ? "rounded-xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-2 text-xs font-semibold text-amber-300 transition hover:bg-amber-500/[0.10] disabled:cursor-not-allowed disabled:opacity-40"
+                              : "rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-2 text-xs font-semibold text-emerald-300 transition hover:bg-emerald-500/[0.10] disabled:opacity-40"
+                          }
+                        >
+                          {verified
+                            ? "Mark Unverified"
+                            : "Verify User"}
                         </button>
 
                         <button

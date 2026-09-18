@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/lib/api";
-import Navbar from "@/components/Navbar";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,14 +50,23 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
-      <section className="mx-auto flex min-h-[calc(100vh-80px)] max-w-7xl items-center justify-center px-5 py-16 sm:px-8 lg:px-10">
+      <section className="mx-auto flex min-h-[calc(100vh-56px)] max-w-7xl items-center justify-center px-5 py-16 sm:px-8 lg:px-10">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <div className="cx-raised-sm mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
-              <span className="text-xl font-bold tracking-tight">CX</span>
-            </div>
+            <Link
+              href="/"
+              aria-label="CrypticX Lab home"
+              className="cx-raised-sm mx-auto flex h-20 w-20 items-center justify-center rounded-2xl p-2"
+            >
+              <img
+                src="/brand/crypticx2.png"
+                alt="CrypticX Lab"
+                width={72}
+                height={72}
+                className="h-full w-full object-contain"
+              />
+            </Link>
 
             <h1 className="mt-7 text-3xl font-semibold tracking-tight">
               Welcome back
@@ -155,19 +163,6 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="my-7 flex items-center gap-4">
-              <div className="cx-divider flex-1" />
-              <span className="text-xs text-[var(--cx-subtle)]">OR</span>
-              <div className="cx-divider flex-1" />
-            </div>
-
-            <button
-              type="button"
-              className="cx-button cx-button-secondary w-full"
-            >
-              Continue with Passkey
-            </button>
-
             <p className="mt-7 text-center text-sm text-[var(--cx-muted)]">
               Don&apos;t have an account?{" "}
               <Link
@@ -181,8 +176,8 @@ export default function LoginPage() {
 
           <div className="cx-inset-sm mt-6 rounded-2xl p-4 text-center">
             <p className="text-xs leading-5 text-[var(--cx-muted)]">
-              CrypticX authentication uses secure credential protection,
-              optional MFA/passkeys, and risk-based security controls.
+              CrypticX authentication uses secure credential protection
+              and authenticated API sessions.
             </p>
           </div>
 

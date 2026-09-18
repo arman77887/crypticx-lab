@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 import TrustedDevicesPanel from "@/components/TrustedDevicesPanel";
 
 export default function SettingsPage() {
@@ -10,7 +9,6 @@ export default function SettingsPage() {
 
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
       <section className="mx-auto max-w-6xl px-5 pb-20 pt-28 sm:px-8">
         <div>

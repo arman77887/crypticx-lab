@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
 
 const principles = [
   {
@@ -40,7 +39,6 @@ const lifecycle = [
 export default function AboutPage() {
   return (
     <main className="min-h-screen bg-[var(--cx-bg)] text-[var(--cx-text)]">
-      <Navbar />
 
       <section className="mx-auto max-w-7xl px-5 pb-20 pt-16 sm:px-8 lg:px-10 lg:pt-24">
         <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">

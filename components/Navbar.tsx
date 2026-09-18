@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCurrentUser, getStoredToken, logout } from "@/lib/api";
 
@@ -14,7 +15,14 @@ type CurrentUser = {
   }>;
 };
 
+type NavLink = {
+  href: string;
+  label: string;
+};
+
 export default function Navbar() {
+  const pathname = usePathname();
+
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -55,15 +63,21 @@ export default function Navbar() {
       }
     }
 
-    loadUser();
+    void loadUser();
 
     return () => {
       mounted = false;
     };
   }, []);
 
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   const roleNames =
-    user?.roles?.map((role) => role.name.toLowerCase()) ?? [];
+    user?.roles?.map((role) =>
+      role.name.toLowerCase(),
+    ) ?? [];
 
   const isAdmin =
     roleNames.includes("owner") ||
@@ -73,71 +87,117 @@ export default function Navbar() {
     try {
       await logout();
     } catch {
-      // Local auth state will still be cleared by logout helper.
+      // Local auth state is still cleared by the logout helper.
     } finally {
       setUser(null);
       window.location.href = "/";
     }
   }
 
-  const publicLinks = [
+  const publicLinks: NavLink[] = [
+    { href: "/", label: "Home" },
     { href: "/tools", label: "Tools" },
     { href: "/scanner", label: "Scanner" },
     { href: "/labs", label: "Security Labs" },
     { href: "/docs", label: "Docs" },
     { href: "/pricing", label: "Pricing" },
+    { href: "/contact", label: "Contact" },
   ];
 
-  const authenticatedLinks = isAdmin
-    ? [
-        { href: "/admin", label: "Admin Console" },
-        { href: "/scanner", label: "Scanner" },
-        { href: "/findings", label: "Findings" },
-        { href: "/monitoring", label: "Monitoring" },
-        { href: "/docs", label: "Docs" },
-      ]
-    : [
-        { href: "/dashboard", label: "Dashboard" },
-        { href: "/scanner", label: "Scanner" },
-        { href: "/findings", label: "Findings" },
-        { href: "/monitoring", label: "Monitoring" },
-        { href: "/docs", label: "Docs" },
-      ];
+  const userLinks: NavLink[] = [
+    { href: "/", label: "Home" },
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/scanner", label: "Scanner" },
+    { href: "/findings", label: "Findings" },
+    { href: "/monitoring", label: "Monitoring" },
+    { href: "/docs", label: "Docs" },
+    { href: "/profile", label: "Profile" },
+  ];
 
-  const mainLinks = user ? authenticatedLinks : publicLinks;
+  const adminLinks: NavLink[] = [
+    { href: "/", label: "Home" },
+    { href: "/admin", label: "Admin Console" },
+    { href: "/scanner", label: "Scanner" },
+    { href: "/findings", label: "Findings" },
+    { href: "/monitoring", label: "Monitoring" },
+    { href: "/docs", label: "Docs" },
+    { href: "/profile", label: "Profile" },
+  ];
+
+  const mainLinks = user
+    ? isAdmin
+      ? adminLinks
+      : userLinks
+    : publicLinks;
+
+  function isActive(href: string): boolean {
+    if (href === "/") {
+      return pathname === "/";
+    }
+
+    if (href === "/admin") {
+      return (
+        pathname === "/admin" ||
+        pathname.startsWith("/admin/")
+      );
+    }
+
+    return (
+      pathname === href ||
+      pathname.startsWith(`${href}/`)
+    );
+  }
+
+  const displayName =
+    user?.name?.trim() ||
+    user?.email?.split("@")[0] ||
+    "Account";
+
+  const initial =
+    displayName.charAt(0).toUpperCase() || "U";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--cx-border)] bg-[var(--cx-bg)]/90 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[72px] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 border-b border-[var(--cx-border)] bg-[var(--cx-bg)]/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex items-center gap-3 font-semibold tracking-tight text-[var(--cx-text)]"
+          aria-label="CrypticX Lab home"
+          className="flex min-w-0 shrink-0 items-center gap-3 text-[var(--cx-text)]"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--cx-dark)] text-sm font-black text-white shadow-lg">
-            CX
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center sm:h-11 sm:w-11">
+            <img
+              src="/brand/crypticx2.png"
+              alt="CrypticX Lab"
+              width={64}
+              height={64}
+              className="h-full w-full object-contain"
+            />
           </span>
-
-          <div className="leading-tight">
-            <div className="text-base font-bold">CrypticX Lab</div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-[var(--cx-muted)]">
-              Security Intelligence
-            </div>
-          </div>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
-          {mainLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-xl px-3 py-2 text-sm font-medium text-[var(--cx-muted)] transition hover:bg-white/[0.04] hover:text-[var(--cx-text)]"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="ml-auto hidden min-w-0 items-center gap-1 xl:flex">
+          {mainLinks.map((link) => {
+            const active = isActive(link.href);
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={active ? "page" : undefined}
+                className={[
+                  "rounded-xl px-3 py-2 text-sm font-semibold transition",
+                  active
+                    ? "border border-white/[0.09] bg-white/[0.07] text-[var(--cx-text)]"
+                    : "border border-transparent text-[var(--cx-muted)] hover:bg-white/[0.04] hover:text-[var(--cx-text)]",
+                ].join(" ")}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="hidden items-center gap-2 lg:flex">
+        <div className="ml-auto hidden shrink-0 items-center gap-2 xl:flex">
           {!loading && !user && (
             <>
               <Link
@@ -157,24 +217,48 @@ export default function Navbar() {
           )}
 
           {!loading && user && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="cx-button cx-button-secondary text-sm"
-            >
-              Logout
-            </button>
+            <>
+              <Link
+                href="/profile"
+                title={user.email}
+                className="flex max-w-[180px] items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-2.5 py-2 transition hover:bg-white/[0.05]"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.05] text-xs font-bold text-[var(--cx-text)]">
+                  {initial}
+                </span>
+
+                <span className="min-w-0">
+                  <span className="block truncate text-xs font-semibold text-[var(--cx-text)]">
+                    {displayName}
+                  </span>
+                  <span className="block truncate text-[9px] uppercase tracking-wider text-[var(--cx-muted)]">
+                    {isAdmin ? "Administrator" : "User Account"}
+                  </span>
+                </span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-xl border border-white/[0.08] px-3 py-2.5 text-xs font-semibold text-[var(--cx-muted)] transition hover:border-red-400/20 hover:bg-red-500/[0.06] hover:text-red-300"
+              >
+                Logout
+              </button>
+            </>
           )}
 
           {loading && (
-            <div className="h-10 w-36 animate-pulse rounded-xl bg-white/[0.04]" />
+            <div className="h-10 w-32 animate-pulse rounded-xl bg-white/[0.04]" />
           )}
         </div>
 
         <button
           type="button"
-          onClick={() => setMobileOpen((value) => !value)}
-          className="cx-button cx-button-secondary px-3 lg:hidden"
+          onClick={() =>
+            setMobileOpen((value) => !value)
+          }
+          className="ml-auto rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-xs font-semibold text-[var(--cx-text)] xl:hidden"
+          aria-expanded={mobileOpen}
           aria-label="Toggle navigation"
         >
           {mobileOpen ? "Close" : "Menu"}
@@ -182,26 +266,56 @@ export default function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-x-0 top-[72px] z-[9999] max-h-[calc(100vh-72px)] overflow-y-auto border-t border-[var(--cx-border)] bg-[var(--cx-bg)] px-4 py-4 shadow-xl lg:hidden">
-          <div className="mx-auto flex max-w-7xl flex-col gap-2">
-            {mainLinks.map((link) => (
+        <div className="border-t border-[var(--cx-border)] bg-[var(--cx-bg)] xl:hidden">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+            {!loading && user && (
               <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="rounded-xl px-4 py-3 text-sm font-medium text-[var(--cx-muted)] hover:bg-white/[0.04] hover:text-[var(--cx-text)]"
+                href="/profile"
+                className="mb-4 flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-3"
               >
-                {link.label}
-              </Link>
-            ))}
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.05] text-sm font-bold">
+                  {initial}
+                </span>
 
-            <div className="my-2 h-px bg-[var(--cx-border)]" />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-semibold">
+                    {displayName}
+                  </span>
+                  <span className="block truncate text-xs text-[var(--cx-muted)]">
+                    {user.email}
+                  </span>
+                </span>
+              </Link>
+            )}
+
+            <nav className="grid gap-1">
+              {mainLinks.map((link) => {
+                const active = isActive(link.href);
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    className={[
+                      "rounded-xl border px-4 py-3 text-sm font-semibold transition",
+                      active
+                        ? "border-white/[0.09] bg-white/[0.07] text-[var(--cx-text)]"
+                        : "border-transparent text-[var(--cx-muted)] hover:bg-white/[0.04] hover:text-[var(--cx-text)]",
+                    ].join(" ")}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            <div className="my-4 h-px bg-[var(--cx-border)]" />
 
             {!loading && !user && (
-              <>
+              <div className="grid grid-cols-2 gap-2">
                 <Link
                   href="/login"
-                  onClick={() => setMobileOpen(false)}
                   className="cx-button cx-button-secondary justify-center"
                 >
                   Sign In
@@ -209,19 +323,18 @@ export default function Navbar() {
 
                 <Link
                   href="/register"
-                  onClick={() => setMobileOpen(false)}
                   className="cx-button cx-button-primary justify-center"
                 >
                   Sign Up
                 </Link>
-              </>
+              </div>
             )}
 
             {!loading && user && (
               <button
                 type="button"
                 onClick={handleLogout}
-                className="cx-button cx-button-secondary justify-center"
+                className="w-full rounded-xl border border-red-400/15 bg-red-500/[0.04] px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/[0.08]"
               >
                 Logout
               </button>
