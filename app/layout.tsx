@@ -28,6 +28,10 @@ export const metadata: Metadata = {
 
   applicationName: "CrypticX Lab",
 
+  verification: {
+    google: "saRVQ0sQOUksBmUf-LJFiFPzkeKOKSAZUXFzX-S-zPY",
+  },
+
   alternates: {
     canonical: "/",
   },
