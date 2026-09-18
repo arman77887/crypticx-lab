@@ -44,7 +44,7 @@ export default function ReportsPage() {
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(
     null,
   );
-  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [, setDownloadError] = useState<string | null>(null);
   const [reports, setReports] = useState<ReportRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [query, setQuery] = useState("");
