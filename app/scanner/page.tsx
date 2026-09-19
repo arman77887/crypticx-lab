@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  AccountEntitlements,
+  ApiError,
   ApiFinding,
   createAssessment,
   createTarget,
+  getAccountEntitlements,
   getAssessment,
   getFindings,
   getStoredToken,
@@ -59,11 +62,36 @@ export default function ScannerPage() {
   const [findings, setFindings] = useState<ApiFinding[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [entitlements, setEntitlements] =
+    useState<AccountEntitlements | null>(null);
+  const [quotaModalOpen, setQuotaModalOpen] = useState(false);
 
   const selectedType = useMemo(
     () => scanTypes.find((item) => item.title === selected) ?? scanTypes[0],
     [selected],
   );
+
+  useEffect(() => {
+    if (!getStoredToken()) return;
+
+    let cancelled = false;
+
+    getAccountEntitlements()
+      .then((response) => {
+        if (!cancelled) {
+          setEntitlements(response.data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEntitlements(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!assessmentId) return;
@@ -139,6 +167,19 @@ export default function ScannerPage() {
       return;
     }
 
+    const assessmentLimit =
+      entitlements?.limits.assessments_monthly ?? null;
+    const assessmentsUsed =
+      entitlements?.usage.assessments_monthly ?? 0;
+
+    if (
+      assessmentLimit !== null &&
+      assessmentsUsed >= assessmentLimit
+    ) {
+      setQuotaModalOpen(true);
+      return;
+    }
+
     setBusy(true);
     setStatus("Creating target");
     setProgress(0);
@@ -161,9 +202,33 @@ export default function ScannerPage() {
       setAssessmentId(assessmentResponse.data.id);
       setStatus(assessmentResponse.data.status);
       setProgress(Number(assessmentResponse.data.progress ?? 0));
+
+      try {
+        const refreshed = await getAccountEntitlements();
+        setEntitlements(refreshed.data);
+      } catch {
+        // Assessment creation already succeeded.
+        // Backend quota enforcement remains authoritative.
+      }
     } catch (startError) {
       setBusy(false);
       setStatus("Failed");
+
+      if (
+        startError instanceof ApiError &&
+        startError.code === "ASSESSMENT_MONTHLY_LIMIT_REACHED"
+      ) {
+        setQuotaModalOpen(true);
+
+        try {
+          const refreshed = await getAccountEntitlements();
+          setEntitlements(refreshed.data);
+        } catch {
+          // The server-side quota response remains authoritative.
+        }
+
+        return;
+      }
 
       setError(
         startError instanceof Error
@@ -473,6 +538,59 @@ export default function ScannerPage() {
           </div>
         </section>
       </div>
+
+      {quotaModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-5 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quota-modal-title"
+        >
+          <div className="w-full max-w-md rounded-[2rem] bg-[#09090b] p-7 shadow-[12px_12px_30px_#000000,-8px_-8px_24px_#171719]">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">
+              Plan limit
+            </p>
+
+            <h2
+              id="quota-modal-title"
+              className="mt-3 text-2xl font-black"
+            >
+              Monthly scan limit reached
+            </h2>
+
+            <p className="mt-4 text-sm leading-6 text-white/55">
+              You have used{" "}
+              <strong className="text-white">
+                {entitlements?.usage.assessments_monthly ?? "all"}
+              </strong>{" "}
+              of{" "}
+              <strong className="text-white">
+                {entitlements?.limits.assessments_monthly ?? "your"}
+              </strong>{" "}
+              assessments included in your current plan this month.
+              Your monthly quota resets at the start of the next
+              calendar month.
+            </p>
+
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setQuotaModalOpen(false)}
+                className="rounded-2xl bg-[#09090b] px-5 py-3 text-sm font-bold text-white/65 shadow-[5px_5px_10px_#000000,-5px_-5px_10px_#171719]"
+              >
+                Close
+              </button>
+
+              <a
+                href="/pricing"
+                className="rounded-2xl bg-[#17212b] px-5 py-3 text-center text-sm font-bold text-white shadow-[6px_6px_14px_#000000,-5px_-5px_12px_#171719]"
+              >
+                View plans
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

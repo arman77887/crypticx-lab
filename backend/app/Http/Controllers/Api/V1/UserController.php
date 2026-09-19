@@ -30,22 +30,24 @@ class UserController extends Controller
             ->latest()
             ->paginate(20);
 
+        $subscriptionMeta = $users
+            ->getCollection()
+            ->mapWithKeys(function (User $user) {
+                return [
+                    $user->id => [
+                        'effective_plan' =>
+                            $this->entitlements
+                                ->effectivePlanCode($user),
+                        'subscription' =>
+                            $this->subscriptions
+                                ->accountState($user),
+                    ],
+                ];
+            });
+
         return UserResource::collection($users)
             ->additional([
-                'subscription_meta' => $users
-                    ->getCollection()
-                    ->mapWithKeys(function (User $user) {
-                        return [
-                            $user->id => [
-                                'effective_plan' =>
-                                    $this->entitlements
-                                        ->effectivePlanCode($user),
-                                'subscription' =>
-                                    $this->subscriptions
-                                        ->accountState($user),
-                            ],
-                        ];
-                    }),
+                'subscription_meta' => $subscriptionMeta,
             ]);
     }
 

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  AccountEntitlements,
   enrollPasskey,
+  getAccountEntitlements,
   getCurrentUser,
   getPasskeyStatus,
   getStoredToken,
@@ -25,6 +27,9 @@ type User = {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
+  const [entitlements, setEntitlements] =
+    useState<AccountEntitlements | null>(null);
+  const [planError, setPlanError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [passkeyLoading, setPasskeyLoading] = useState(false);
@@ -59,6 +64,23 @@ export default function ProfilePage() {
 
         if (mounted) {
           setUser(currentUser);
+        }
+
+        try {
+          const entitlementResponse =
+            await getAccountEntitlements();
+
+          if (mounted) {
+            setEntitlements(entitlementResponse.data);
+          }
+        } catch (entitlementError) {
+          if (mounted) {
+            setPlanError(
+              entitlementError instanceof Error
+                ? entitlementError.message
+                : "Unable to load plan information.",
+            );
+          }
         }
 
         const adminRole =
@@ -280,6 +302,107 @@ export default function ProfilePage() {
                   {roles}
                 </div>
               </div>
+            </div>
+
+            <div className="mt-8 cx-inset-sm rounded-2xl p-5 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--cx-subtle)]">
+                    Current Plan
+                  </div>
+
+                  <h3 className="mt-3 text-xl font-bold">
+                    {entitlements?.plan.name ?? "Loading..."}
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-[var(--cx-muted)]">
+                    Your current usage and account limits.
+                  </p>
+                </div>
+
+                <Link
+                  href="/pricing"
+                  className="cx-button cx-button-secondary shrink-0"
+                >
+                  View Plans
+                </Link>
+              </div>
+
+              {planError && (
+                <div className="mt-5 rounded-2xl border border-red-500/30 p-4 text-sm text-red-300">
+                  {planError}
+                </div>
+              )}
+
+              {entitlements && (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {[
+                    [
+                      "Assessments this month",
+                      entitlements.usage.assessments_monthly,
+                      entitlements.limits.assessments_monthly,
+                    ],
+                    [
+                      "Targets",
+                      entitlements.usage.targets_total,
+                      entitlements.limits.targets_total,
+                    ],
+                    [
+                      "Reports this month",
+                      entitlements.usage.reports_monthly,
+                      entitlements.limits.reports_monthly,
+                    ],
+                    [
+                      "Monitoring policies",
+                      entitlements.usage.monitoring_policies,
+                      entitlements.limits.monitoring_policies,
+                    ],
+                  ].map(([label, used, limit]) => {
+                    const usedNumber = Number(used);
+                    const limitNumber =
+                      limit === null ? null : Number(limit);
+
+                    const percentage =
+                      limitNumber === null || limitNumber <= 0
+                        ? 0
+                        : Math.min(
+                            100,
+                            (usedNumber / limitNumber) * 100,
+                          );
+
+                    return (
+                      <div
+                        key={String(label)}
+                        className="rounded-2xl border border-[var(--cx-border)] p-4"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-semibold text-[var(--cx-muted)]">
+                            {label}
+                          </span>
+
+                          <span className="text-sm font-bold">
+                            {usedNumber} /{" "}
+                            {limitNumber === null
+                              ? "Unlimited"
+                              : limitNumber}
+                          </span>
+                        </div>
+
+                        {limitNumber !== null && limitNumber > 0 && (
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20">
+                            <div
+                              className="h-full rounded-full bg-[var(--cx-text)] transition-all"
+                              style={{
+                                width: `${percentage}%`,
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {!isAdmin && (

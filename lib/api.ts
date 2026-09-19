@@ -2894,13 +2894,25 @@ export type PlanCatalogResponse = {
   data: Record<string, PremiumPlan>;
 };
 
-export type AccountEntitlements = {
+export type AccountUsage = {
+  targets_total: number;
+  assessments_monthly: number;
+  reports_monthly: number;
+  monitoring_policies: number;
+  concurrent_assessments: number;
+};
+
+export type PlanEntitlements = {
   plan: {
     code: string;
     name: string;
   };
   capabilities: PremiumPlanCapabilities;
   limits: PremiumPlanLimits;
+};
+
+export type AccountEntitlements = PlanEntitlements & {
+  usage: AccountUsage;
 };
 
 export type AccountSubscriptionState = {
@@ -2917,7 +2929,7 @@ export type AccountSubscriptionResponse = {
   success: boolean;
   data: {
     subscription: AccountSubscriptionState;
-    effective_entitlements: AccountEntitlements;
+    effective_entitlements: PlanEntitlements;
   };
 };
 
