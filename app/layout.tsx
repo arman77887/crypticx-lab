@@ -3,6 +3,33 @@ import localFont from "next/font/local";
 import "./globals.css";
 import SiteShell from "@/components/SiteShell";
 
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://crypticxlab.duckdns.org/#website",
+      url: "https://crypticxlab.duckdns.org/",
+      name: "CrypticX Lab",
+      description:
+        "Cybersecurity intelligence platform for authorized security assessments, network analysis, DNS intelligence, SSL/TLS analysis, and API security.",
+      publisher: {
+        "@id": "https://crypticxlab.duckdns.org/#organization",
+      },
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://crypticxlab.duckdns.org/#organization",
+      name: "CrypticX Lab",
+      url: "https://crypticxlab.duckdns.org/",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://crypticxlab.duckdns.org/brand/crypticx-lab-logo.svg",
+      },
+    },
+  ],
+};
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -83,6 +110,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+          }}
+        />
         <SiteShell>{children}</SiteShell>
       </body>
     </html>
