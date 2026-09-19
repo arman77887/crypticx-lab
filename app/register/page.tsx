@@ -86,25 +86,51 @@ export default function RegisterPage() {
           </div>
 
           <div className="cx-card rounded-[30px] p-7 sm:p-9">
-            {success && (
-              <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-4 text-sm leading-6 text-emerald-300">
-                <div className="font-semibold">
-                  Registration successful
+            {success ? (
+              <div className="py-4 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] text-2xl text-emerald-300">
+                  ✓
                 </div>
-                <div className="mt-1 text-emerald-200/70">
-                  {success}
+
+                <h2 className="mt-6 text-2xl font-semibold tracking-tight text-[var(--cx-text)]">
+                  Welcome to CrypticX Lab
+                </h2>
+
+                <p className="mt-3 text-sm leading-6 text-[var(--cx-muted)]">
+                  Your account has been created successfully.
+                </p>
+
+                <div className="cx-inset-sm mt-6 rounded-2xl p-5 text-left">
+                  <div className="text-sm font-semibold text-emerald-300">
+                    Account Verified
+                  </div>
+
+                  <p className="mt-2 text-sm leading-6 text-[var(--cx-muted)]">
+                    Your account was verified automatically. This browser
+                    has been registered as your authorized login device.
+                  </p>
                 </div>
-                <div className="mt-3">
+
+                <p className="mt-6 text-sm leading-6 text-[var(--cx-muted)]">
+                  You can now sign in with your registered email and
+                  password from this authorized device.
+                </p>
+
+                <div className="mt-7 border-t border-[var(--cx-border)] pt-6">
                   <Link
-                    href="/login"
-                    className="font-semibold underline underline-offset-4"
+                    href="/"
+                    className="cx-button cx-button-primary inline-flex"
                   >
-                    Go to sign in
+                    Return to Homepage
                   </Link>
                 </div>
-              </div>
-            )}
 
+                <p className="mt-5 text-xs leading-5 text-[var(--cx-subtle)]">
+                  For your security, sign-in from an unregistered device
+                  will be rejected.
+                </p>
+              </div>
+            ) : (
             <form onSubmit={handleSubmit}>
               <div className="grid gap-6 sm:grid-cols-2">
                 <div>
@@ -264,16 +290,19 @@ export default function RegisterPage() {
                 {loading ? "Creating account..." : "Create Account"}
               </button>
             </form>
+            )}
 
-            <p className="mt-7 text-center text-sm text-[var(--cx-muted)]">
-              Already have an account?{" "}
-              <Link
-                href="/login"
-                className="font-semibold text-[var(--cx-text)]"
-              >
-                Sign in
-              </Link>
-            </p>
+            {!success && (
+              <p className="mt-7 text-center text-sm text-[var(--cx-muted)]">
+                Already have an account?{" "}
+                <Link
+                  href="/login"
+                  className="font-semibold text-[var(--cx-text)]"
+                >
+                  Sign in
+                </Link>
+              </p>
+            )}
           </div>
 
           <div className="cx-inset-sm mt-6 rounded-2xl p-4">

@@ -35,20 +35,46 @@ class MonitoringChangeEmailNotification extends Notification
             ?? 'Monitored target'
         );
 
-        $subject = match ($eventType) {
-            'finding_new' =>
+        $finding = $event['payload']['finding'] ?? null;
+
+        $severity = is_array($finding)
+            ? strtolower(trim(
+                (string) ($finding['severity'] ?? '')
+            ))
+            : '';
+
+        $urgentFindingEvent = in_array(
+            $eventType,
+            [
+                'finding_new',
+                'finding_reappeared',
+                'finding_reopened',
+            ],
+            true
+        );
+
+        $subject = match (true) {
+            $urgentFindingEvent
+                && $severity === 'critical' =>
+                'URGENT: Critical security finding detected',
+
+            $urgentFindingEvent
+                && $severity === 'high' =>
+                'URGENT: High-severity security finding detected',
+
+            $eventType === 'finding_new' =>
                 'New security finding detected',
 
-            'finding_reappeared' =>
+            $eventType === 'finding_reappeared' =>
                 'Security finding detected again',
 
-            'finding_no_longer_detected' =>
+            $eventType === 'finding_no_longer_detected' =>
                 'Security finding no longer detected',
 
-            'finding_reopened' =>
+            $eventType === 'finding_reopened' =>
                 'Security finding reopened',
 
-            'risk_changed' =>
+            $eventType === 'risk_changed' =>
                 'Security risk score changed',
 
             default =>
@@ -98,7 +124,20 @@ class MonitoringChangeEmailNotification extends Notification
             }
         }
 
-        $finding = $event['payload']['finding'] ?? null;
+        if (
+            $urgentFindingEvent
+            && in_array(
+                $severity,
+                ['high', 'critical'],
+                true
+            )
+        ) {
+            $message->line(
+                'Priority: Immediate review recommended because '
+                .'this persisted monitoring event is classified '
+                .strtoupper($severity).'.'
+            );
+        }
 
         if (is_array($finding)) {
             if (! empty($finding['title'])) {

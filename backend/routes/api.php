@@ -56,6 +56,11 @@ Route::prefix('v1')->group(function () {
 
 
     Route::post(
+        '/auth/device/verify',
+        [AuthController::class, 'verifyUserDevice']
+    )->middleware('throttle:10,1');
+
+    Route::post(
         '/auth/passkey/authenticate/verify',
         [AuthController::class, 'verifyPasskeyLogin']
     )->middleware('throttle:10,1');
@@ -71,6 +76,16 @@ Route::prefix('v1')->group(function () {
     ])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/me', [AuthController::class, 'me']);
+
+        Route::get('/account/devices', [
+            \App\Http\Controllers\Api\V1\UserDeviceController::class,
+            'index',
+        ])->middleware('throttle:60,1');
+
+        Route::delete('/account/devices/{deviceId}', [
+            \App\Http\Controllers\Api\V1\UserDeviceController::class,
+            'destroy',
+        ])->middleware('throttle:20,1');
 
         Route::get('/auth/passkey/status', [
             \App\Http\Controllers\Api\V1\PasskeyEnrollmentController::class,

@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ApiUser,
+  type AdminUserSubscriptionMeta,
   createAdminUser,
   deleteAdminUser,
   getAdminUsers,
@@ -54,6 +55,8 @@ function ErrorBox({ message }: { message: string }) {
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<ApiUser[]>([]);
+  const [subscriptionMeta, setSubscriptionMeta] =
+    useState<Record<string, AdminUserSubscriptionMeta>>({});
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] =
     useState<RoleFilter>("All");
@@ -82,26 +85,45 @@ export default function AdminUsersPage() {
   const [editPasswordConfirmation, setEditPasswordConfirmation] =
     useState("");
 
-  async function loadUsers() {
+  async function loadUsers(silent = false) {
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
+
       setError("");
 
       const response = await getAdminUsers();
+
       setUsers(response.data);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to load users.",
+      setSubscriptionMeta(
+        response.subscription_meta ?? {},
       );
+    } catch (err) {
+      if (!silent) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load users.",
+        );
+      }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }
 
   useEffect(() => {
     void loadUsers();
+
+    const interval = window.setInterval(() => {
+      void loadUsers(true);
+    }, 30000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -473,6 +495,32 @@ export default function AdminUsersPage() {
                   user.email_verified_at,
                 );
 
+                const billing =
+                  subscriptionMeta[user.id];
+
+                const planCode =
+                  billing?.effective_plan ?? "free";
+
+                const planLabel =
+                  planCode === "professional"
+                    ? "Professional"
+                    : planCode === "team"
+                      ? "Team"
+                      : planCode.charAt(0).toUpperCase() +
+                        planCode.slice(1);
+
+                const subscriptionStatus =
+                  billing?.subscription?.subscribed
+                    ? billing.subscription.status ?? "active"
+                    : "not subscribed";
+
+                const subscriptionLabel =
+                  subscriptionStatus
+                    .replaceAll("_", " ")
+                    .replace(/\w/g, (character) =>
+                      character.toUpperCase(),
+                    );
+
                 return (
                   <article
                     key={user.id}
@@ -500,6 +548,14 @@ export default function AdminUsersPage() {
                               ? "Verified"
                               : "Unverified"}
                           </span>
+
+                          <span className="rounded-full border border-blue-500/20 bg-blue-500/[0.05] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-300">
+                            {planLabel}
+                          </span>
+
+                          <span className="rounded-full border border-violet-500/20 bg-violet-500/[0.05] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-300">
+                            {subscriptionLabel}
+                          </span>
                         </div>
 
                         <div className="mt-2 truncate text-sm text-white/40">
@@ -514,6 +570,22 @@ export default function AdminUsersPage() {
                               user.created_at,
                             ).toLocaleString()}
                           </span>
+
+                          {billing?.subscription?.provider && (
+                            <span>
+                              Billing:{" "}
+                              {billing.subscription.provider}
+                            </span>
+                          )}
+
+                          {billing?.subscription?.current_period_end && (
+                            <span>
+                              Period ends:{" "}
+                              {new Date(
+                                billing.subscription.current_period_end,
+                              ).toLocaleString()}
+                            </span>
+                          )}
                         </div>
                       </div>
 

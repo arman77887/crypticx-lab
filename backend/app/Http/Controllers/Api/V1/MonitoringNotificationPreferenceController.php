@@ -30,6 +30,9 @@ class MonitoringNotificationPreferenceController extends Controller
                     'event_types' =>
                         MonitoringNotificationPreference::defaultEventTypes(),
                     'minimum_risk_delta' => 1,
+                    'daily_digest_enabled' => true,
+                    'daily_digest_timezone' => 'UTC',
+                    'daily_digest_hour' => 8,
                 ],
             ]);
         }
@@ -43,6 +46,12 @@ class MonitoringNotificationPreferenceController extends Controller
                 'event_types' => $preference->event_types,
                 'minimum_risk_delta' =>
                     $preference->minimum_risk_delta,
+                'daily_digest_enabled' =>
+                    $preference->daily_digest_enabled,
+                'daily_digest_timezone' =>
+                    $preference->daily_digest_timezone,
+                'daily_digest_hour' =>
+                    $preference->daily_digest_hour,
                 'created_at' => $preference->created_at,
                 'updated_at' => $preference->updated_at,
             ],
@@ -86,6 +95,25 @@ class MonitoringNotificationPreferenceController extends Controller
                 ?? 1
             );
 
+            $dailyDigestEnabled = array_key_exists(
+                'daily_digest_enabled',
+                $validated
+            )
+                ? (bool) $validated['daily_digest_enabled']
+                : ($existing?->daily_digest_enabled ?? true);
+
+            $dailyDigestTimezone = (string) (
+                $validated['daily_digest_timezone']
+                ?? $existing?->daily_digest_timezone
+                ?? 'UTC'
+            );
+
+            $dailyDigestHour = (int) (
+                $validated['daily_digest_hour']
+                ?? $existing?->daily_digest_hour
+                ?? 8
+            );
+
             $preference =
                 MonitoringNotificationPreference::query()
                     ->updateOrCreate(
@@ -97,6 +125,12 @@ class MonitoringNotificationPreferenceController extends Controller
                             'event_types' => $eventTypes,
                             'minimum_risk_delta' =>
                                 $minimumRiskDelta,
+                            'daily_digest_enabled' =>
+                                $dailyDigestEnabled,
+                            'daily_digest_timezone' =>
+                                $dailyDigestTimezone,
+                            'daily_digest_hour' =>
+                                $dailyDigestHour,
                         ],
                     );
 
@@ -120,6 +154,12 @@ class MonitoringNotificationPreferenceController extends Controller
                 'event_types' => $preference->event_types,
                 'minimum_risk_delta' =>
                     $preference->minimum_risk_delta,
+                'daily_digest_enabled' =>
+                    $preference->daily_digest_enabled,
+                'daily_digest_timezone' =>
+                    $preference->daily_digest_timezone,
+                'daily_digest_hour' =>
+                    $preference->daily_digest_hour,
                 'created_at' => $preference->created_at,
                 'updated_at' => $preference->updated_at,
             ],

@@ -8,6 +8,8 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\EntitlementService;
+use App\Services\SubscriptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -15,14 +17,36 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly SubscriptionService $subscriptions,
+        private readonly EntitlementService $entitlements,
+    ) {
+    }
+
     public function index(): AnonymousResourceCollection
     {
         $users = User::query()
-            ->with('roles')
+            ->with(['roles', 'subscriptions'])
             ->latest()
             ->paginate(20);
 
-        return UserResource::collection($users);
+        return UserResource::collection($users)
+            ->additional([
+                'subscription_meta' => $users
+                    ->getCollection()
+                    ->mapWithKeys(function (User $user) {
+                        return [
+                            $user->id => [
+                                'effective_plan' =>
+                                    $this->entitlements
+                                        ->effectivePlanCode($user),
+                                'subscription' =>
+                                    $this->subscriptions
+                                        ->accountState($user),
+                            ],
+                        ];
+                    }),
+            ]);
     }
 
     public function show(User $user): UserResource

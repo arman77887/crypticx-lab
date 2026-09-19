@@ -3,14 +3,20 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Mail\NewRegistrationAdminMail;
+use App\Mail\RegistrationApprovedMail;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\DeviceTrustService;
+use App\Services\UserDeviceService;
+use App\Services\UserDeviceAuthorizationService;
 use App\Services\PlatformSettingsService;
 use App\Services\TelemetryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -20,6 +26,8 @@ class AuthController extends Controller
     public function __construct(
         private readonly PlatformSettingsService $settings,
         private readonly DeviceTrustService $deviceTrust,
+        private readonly UserDeviceService $userDeviceService,
+        private readonly UserDeviceAuthorizationService $userDeviceAuthorization,
         private readonly TelemetryService $telemetry,
     ) {
     }
@@ -65,6 +73,7 @@ class AuthController extends Controller
                 $validated['email']
             ),
             'password' => $validated['password'],
+            'email_verified_at' => now(),
         ]);
 
         $defaultRole = Role::query()
@@ -82,6 +91,10 @@ class AuthController extends Controller
 
         $user->load('roles');
 
+        $registeredDevice = $this->userDeviceService->register(
+            $user,
+            $request,
+        );
 
         $this->telemetry->audit(
             $request,
@@ -99,13 +112,58 @@ class AuthController extends Controller
             $user,
         );
 
+        try {
+            Mail::to($user->email)->send(
+                new RegistrationApprovedMail($user)
+            );
+        } catch (\Throwable $exception) {
+            Log::warning(
+                'Registration approved email notification failed.',
+                [
+                    'user_id' => $user->id,
+                    'exception' => get_class($exception),
+                ]
+            );
+
+            report($exception);
+        }
+
+        $adminRecipient = config('contact.recipient');
+
+        if (
+            is_string($adminRecipient)
+            && $adminRecipient !== ''
+        ) {
+            try {
+                Mail::to($adminRecipient)->send(
+                    new NewRegistrationAdminMail($user)
+                );
+            } catch (\Throwable $exception) {
+                Log::warning(
+                    'New registration admin email notification failed.',
+                    [
+                        'user_id' => $user->id,
+                        'exception' => get_class($exception),
+                    ]
+                );
+
+                report($exception);
+            }
+        } else {
+            Log::warning(
+                'New registration admin recipient is not configured.',
+                ['user_id' => $user->id]
+            );
+        }
+
         return response()->json([
             'success' => true,
             'message' =>
-                'Account created. Waiting for administrator approval.',
+                'Account created and verified successfully.',
             'data' => [
                 'user' => $user,
-                'approval_required' => true,
+                'approval_required' => false,
+                'device_token' => $registeredDevice['token'],
             ],
         ], 201);
     }
@@ -169,25 +227,91 @@ class AuthController extends Controller
             )
         );
 
-        if (
-            ! $isAdministrator
-            && $user->email_verified_at === null
-        ) {
-            $this->telemetry->audit(
-                $request,
-                'auth.login_pending_approval',
-                'authentication',
-                $user,
-                ['success' => false],
-                'user',
-                $user->id,
+        if (! $isAdministrator) {
+            $deviceToken = (string) $request->header(
+                'X-User-Device-Token',
+                '',
             );
 
-            return response()->json([
-                'success' => false,
-                'message' =>
-                    'Your account is awaiting administrator approval.',
-            ], 403);
+            $userDevice = $this->userDeviceService
+                ->findActiveForUser(
+                    $user,
+                    $deviceToken,
+                );
+
+            if (! $userDevice) {
+                $this->telemetry->audit(
+                    $request,
+                    'auth.login_unregistered_device',
+                    'authentication',
+                    $user,
+                    ['success' => false],
+                    'user',
+                    $user->id,
+                );
+
+                try {
+                    $requestToken = $this
+                        ->userDeviceAuthorization
+                        ->sendCode(
+                            $user,
+                            $request,
+                        );
+                } catch (\Throwable $exception) {
+                    Log::warning(
+                        'User device verification email failed.',
+                        [
+                            'user_id' => $user->id,
+                            'exception' =>
+                                $exception->getMessage(),
+                        ]
+                    );
+
+                    return response()->json([
+                        'success' => false,
+                        'message' =>
+                            'Unable to send the device verification code. Please try again.',
+                        'code' =>
+                            'USER_DEVICE_OTP_SEND_FAILED',
+                    ], 503);
+                }
+
+                $email = $user->email;
+                [$local, $domain] = array_pad(
+                    explode('@', $email, 2),
+                    2,
+                    ''
+                );
+
+                $visible = mb_substr($local, 0, 2);
+                $maskedEmail =
+                    $visible
+                    . str_repeat(
+                        '*',
+                        max(3, mb_strlen($local) - 2)
+                    )
+                    . ($domain !== '' ? '@'.$domain : '');
+
+                return response()->json([
+                    'success' => false,
+                    'message' =>
+                        'A 6-digit verification code was sent to '.$maskedEmail.'.',
+                    'code' =>
+                        'USER_DEVICE_VERIFICATION_REQUIRED',
+                    'data' => [
+                        'device_verification_required' =>
+                            true,
+                        'request_token' => $requestToken,
+                        'email' => $maskedEmail,
+                        'expires_in' => 60,
+                    ],
+                ], 403);
+            }
+
+            $this->userDeviceService->touch(
+                $userDevice,
+                $request,
+            );
         }
 
         if ($isAdministrator) {
@@ -274,6 +398,83 @@ class AuthController extends Controller
                 'expires_in' =>
                     self::TOKEN_LIFETIME_HOURS
                     * 3600,
+            ],
+        ]);
+    }
+
+    public function verifyUserDevice(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'request_token' => [
+                'required',
+                'string',
+                'size:64',
+            ],
+            'code' => [
+                'required',
+                'digits:6',
+            ],
+        ]);
+
+        $result = $this
+            ->userDeviceAuthorization
+            ->verifyAndRegister(
+                $validated['request_token'],
+                $validated['code'],
+                $request,
+            );
+
+        $user = $result['user'];
+        $device = $result['device'];
+        $deviceToken = $result['token'];
+
+        $token = $this->issueWebToken(
+            $user,
+            $request,
+        );
+
+        $this->telemetry->audit(
+            $request,
+            'auth.user_device_authorized',
+            'authentication',
+            $user,
+            [
+                'success' => true,
+                'device_id' => $device->id,
+            ],
+            'user',
+            $user->id,
+        );
+
+        $this->telemetry->activity(
+            $request,
+            'login',
+            $user,
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' =>
+                'Device verified and authenticated successfully.',
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+                'token_type' => 'Bearer',
+                'expires_in' =>
+                    self::TOKEN_LIFETIME_HOURS
+                    * 3600,
+                'device_token' => $deviceToken,
+                'device' => [
+                    'id' => $device->id,
+                    'device_type' =>
+                        $device->device_type,
+                    'browser' =>
+                        $device->browser,
+                    'platform' =>
+                        $device->platform,
+                    'registered_at' =>
+                        $device->registered_at,
+                ],
             ],
         ]);
     }

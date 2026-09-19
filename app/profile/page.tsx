@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { enrollPasskey, getCurrentUser, getPasskeyStatus, getStoredToken, type PasskeyStatusResponse } from "@/lib/api";
+import {
+  enrollPasskey,
+  getCurrentUser,
+  getPasskeyStatus,
+  getStoredToken,
+  getUserDevices,
+  removeUserDevice,
+  type PasskeyStatusResponse,
+  type UserDevice,
+} from "@/lib/api";
 
 type User = {
   id: string;
@@ -23,6 +32,13 @@ export default function ProfilePage() {
   const [passkeyError, setPasskeyError] = useState("");
   const [passkeyStatus, setPasskeyStatus] =
     useState<PasskeyStatusResponse["data"] | null>(null);
+
+  const [devices, setDevices] = useState<UserDevice[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
+  const [deviceError, setDeviceError] = useState("");
+  const [deviceMessage, setDeviceMessage] = useState("");
+  const [removingDeviceId, setRemovingDeviceId] =
+    useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -62,6 +78,30 @@ export default function ProfilePage() {
           } catch {
             // Keep profile usable even if passkey status cannot be loaded.
           }
+        } else {
+          if (mounted) {
+            setDevicesLoading(true);
+          }
+
+          try {
+            const deviceResponse = await getUserDevices();
+
+            if (mounted) {
+              setDevices(deviceResponse.data.devices);
+            }
+          } catch (deviceLoadError) {
+            if (mounted) {
+              setDeviceError(
+                deviceLoadError instanceof Error
+                  ? deviceLoadError.message
+                  : "Unable to load authorized devices.",
+              );
+            }
+          } finally {
+            if (mounted) {
+              setDevicesLoading(false);
+            }
+          }
         }
       } catch (err) {
         if (mounted) {
@@ -95,6 +135,47 @@ export default function ProfilePage() {
 
       return name === "owner" || name === "administrator";
     }) ?? false;
+
+  async function handleRemoveDevice(device: UserDevice) {
+    const confirmed = window.confirm(
+      device.current
+        ? "Remove this current device? You will be signed out and will need email verification to authorize it again."
+        : `Remove authorization for ${device.browser || "this browser"} on ${device.platform || "this device"}?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeviceError("");
+    setDeviceMessage("");
+    setRemovingDeviceId(device.id);
+
+    try {
+      const response = await removeUserDevice(device.id);
+
+      if (response.data.current_device_removed) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setDevices((current) =>
+        current.filter((item) => item.id !== device.id),
+      );
+
+      setDeviceMessage(
+        "Device authorization removed successfully.",
+      );
+    } catch (err) {
+      setDeviceError(
+        err instanceof Error
+          ? err.message
+          : "Unable to remove this device.",
+      );
+    } finally {
+      setRemovingDeviceId(null);
+    }
+  }
 
   async function handlePasskeyEnrollment() {
     setPasskeyError("");
@@ -200,6 +281,136 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {!isAdmin && (
+              <div
+                id="device-security"
+                className="mt-8 scroll-mt-24 cx-inset-sm rounded-2xl p-5 sm:p-6"
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--cx-subtle)]">
+                      Device Security
+                    </div>
+
+                    <h3 className="mt-3 text-lg font-bold">
+                      Authorized Devices
+                    </h3>
+
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--cx-muted)]">
+                      Only authorized browsers can sign in to your account.
+                      A new browser must be verified using the security code
+                      sent to your registered email.
+                    </p>
+                  </div>
+
+                  <div className="shrink-0 rounded-xl border border-emerald-500/25 px-3 py-2 text-xs font-bold text-emerald-300">
+                    DEVICE PROTECTION ACTIVE
+                  </div>
+                </div>
+
+                {deviceMessage && (
+                  <div className="mt-5 rounded-2xl border border-emerald-500/30 p-4 text-sm text-emerald-300">
+                    {deviceMessage}
+                  </div>
+                )}
+
+                {deviceError && (
+                  <div className="mt-5 rounded-2xl border border-red-500/30 p-4 text-sm text-red-300">
+                    {deviceError}
+                  </div>
+                )}
+
+                {devicesLoading ? (
+                  <div className="mt-6 rounded-2xl border border-[var(--cx-border)] p-5 text-sm text-[var(--cx-muted)]">
+                    Loading authorized devices...
+                  </div>
+                ) : devices.length === 0 ? (
+                  <div className="mt-6 rounded-2xl border border-[var(--cx-border)] p-5">
+                    <div className="font-semibold">
+                      No authorized devices found
+                    </div>
+
+                    <p className="mt-2 text-sm leading-6 text-[var(--cx-muted)]">
+                      Sign in through the device verification flow to
+                      authorize this browser.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-6 space-y-4">
+                    {devices.map((device) => (
+                      <div
+                        key={device.id}
+                        className="rounded-2xl border border-[var(--cx-border)] p-5"
+                      >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="font-bold">
+                                {device.browser || "Unknown browser"}
+                              </div>
+
+                              {device.current && (
+                                <span className="rounded-full border border-emerald-500/30 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                                  Current Device
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="mt-2 text-sm text-[var(--cx-muted)]">
+                              {device.platform || "Unknown platform"}
+                              {" · "}
+                              {device.device_type || "Device"}
+                            </div>
+
+                            <div className="mt-3 grid gap-2 text-xs text-[var(--cx-subtle)] sm:grid-cols-2">
+                              <div>
+                                Registered:{" "}
+                                {device.registered_at
+                                  ? new Date(
+                                      device.registered_at,
+                                    ).toLocaleString()
+                                  : "Unknown"}
+                              </div>
+
+                              <div>
+                                Last active:{" "}
+                                {device.last_seen_at
+                                  ? new Date(
+                                      device.last_seen_at,
+                                    ).toLocaleString()
+                                  : "Never"}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void handleRemoveDevice(device)
+                            }
+                            disabled={removingDeviceId === device.id}
+                            className="cx-button cx-button-secondary shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {removingDeviceId === device.id
+                              ? "Removing..."
+                              : device.current
+                                ? "Remove This Device"
+                                : "Remove Device"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="mt-5 text-xs leading-5 text-[var(--cx-subtle)]">
+                  Clearing browser storage may cause this browser to be
+                  treated as a new device and require email verification
+                  again.
+                </p>
+              </div>
+            )}
 
             {isAdmin && (
               <div className="mt-8 cx-inset-sm rounded-2xl p-5 sm:p-6">

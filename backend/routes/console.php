@@ -49,3 +49,20 @@ Artisan::command('assessments:recover', function (
 Schedule::command('assessments:recover')
     ->everyMinute()
     ->withoutOverlapping(10);
+
+Artisan::command('monitoring:daily-digest', function (
+    \App\Services\MonitoringDailyDigestPlannerService $planner
+) {
+    $result = $planner->planDue();
+
+    $this->info(json_encode(
+        $result,
+        JSON_UNESCAPED_SLASHES
+    ));
+})->purpose(
+    'Plan due daily monitoring digest emails'
+);
+
+Schedule::command('monitoring:daily-digest')
+    ->everyMinute()
+    ->withoutOverlapping(10);

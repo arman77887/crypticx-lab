@@ -49,14 +49,70 @@ type AdminPasskeyLoginChallengeResponse = {
 };
 
 
+export type UserDeviceVerificationChallenge = {
+  device_verification_required: true;
+  request_token: string;
+  email: string;
+  expires_in: number;
+};
+
+export type UserDeviceLoginChallenge = {
+  verification_required: true;
+  message: string;
+  data: UserDeviceVerificationChallenge;
+};
+
+export type VerifyUserDeviceResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    user: ApiUser;
+    token: string;
+    token_type: string;
+    expires_in?: number;
+    device_token: string;
+    device?: {
+      id: string;
+      device_type?: string | null;
+      browser?: string | null;
+      platform?: string | null;
+      registered_at?: string | null;
+      last_seen_at?: string | null;
+    };
+  };
+};
+
 export type RegisterResponse = {
   success: boolean;
   message: string;
   data: {
     user: ApiUser;
     approval_required: boolean;
+    device_token: string;
   };
 };
+
+export class ApiError extends Error {
+  status: number;
+  code?: string;
+  data?: unknown;
+  errors?: Record<string, string[]>;
+
+  constructor(
+    message: string,
+    status: number,
+    code?: string,
+    data?: unknown,
+    errors?: Record<string, string[]>,
+  ) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.data = data;
+    this.errors = errors;
+  }
+}
 
 export async function apiRequest<T>(
   path: string,
@@ -115,10 +171,54 @@ export async function apiRequest<T>(
       data?.errors?.password?.[0] ??
       `API request failed with status ${response.status}.`;
 
-    throw new Error(message);
+    throw new ApiError(
+      message,
+      response.status,
+      data?.code,
+      data?.data,
+      data?.errors,
+    );
   }
 
   return data as T;
+}
+
+export async function verifyUserDevice(
+  requestToken: string,
+  code: string,
+  remember: boolean,
+): Promise<VerifyUserDeviceResponse> {
+  const response = await apiRequest<VerifyUserDeviceResponse>(
+    "/auth/device/verify",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        request_token: requestToken,
+        code,
+      }),
+    },
+  );
+
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(
+      "crypticx_user_device_token",
+      response.data.device_token,
+    );
+
+    window.localStorage.removeItem("crypticx_token");
+    window.sessionStorage.removeItem("crypticx_token");
+
+    const storage = remember
+      ? window.localStorage
+      : window.sessionStorage;
+
+    storage.setItem(
+      "crypticx_token",
+      response.data.token,
+    );
+  }
+
+  return response;
 }
 
 export type PasswordRecoveryResponse = {
@@ -201,6 +301,15 @@ export async function register(
   window.localStorage.removeItem("crypticx_token");
   window.sessionStorage.removeItem("crypticx_token");
 
+  const userDeviceToken = response.data?.device_token;
+
+  if (userDeviceToken) {
+    window.localStorage.setItem(
+      "crypticx_user_device_token",
+      userDeviceToken,
+    );
+  }
+
   return response;
 }
 
@@ -208,16 +317,62 @@ export async function login(
   email: string,
   password: string,
   remember: boolean,
-): Promise<LoginResponse> {
-  const response = await apiRequest<
-    LoginResponse | AdminPasskeyLoginChallengeResponse
-  >("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({
-      email,
-      password,
-    }),
-  });
+): Promise<LoginResponse | UserDeviceLoginChallenge> {
+  const userDeviceToken =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem(
+          "crypticx_user_device_token",
+        )
+      : null;
+
+  const loginHeaders = new Headers();
+
+  if (userDeviceToken) {
+    loginHeaders.set(
+      "X-User-Device-Token",
+      userDeviceToken,
+    );
+  }
+
+  let response:
+    | LoginResponse
+    | AdminPasskeyLoginChallengeResponse;
+
+  try {
+    response = await apiRequest<
+      LoginResponse | AdminPasskeyLoginChallengeResponse
+    >("/auth/login", {
+      method: "POST",
+      headers: loginHeaders,
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.status === 403 &&
+      error.code === "USER_DEVICE_VERIFICATION_REQUIRED"
+    ) {
+      const challenge =
+        error.data as UserDeviceVerificationChallenge | undefined;
+
+      if (
+        challenge?.device_verification_required === true &&
+        typeof challenge.request_token === "string" &&
+        typeof challenge.email === "string"
+      ) {
+        return {
+          verification_required: true,
+          message: error.message,
+          data: challenge,
+        };
+      }
+    }
+
+    throw error;
+  }
 
   let authenticatedResponse: LoginResponse;
 
@@ -463,8 +618,24 @@ export async function downloadAdminReportPdf(
   );
 }
 
+export type AdminUserSubscriptionState = {
+  subscribed: boolean;
+  plan_code: string | null;
+  status: string | null;
+  provider: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+};
+
+export type AdminUserSubscriptionMeta = {
+  effective_plan: string;
+  subscription: AdminUserSubscriptionState;
+};
+
 export type PaginatedUsersResponse = {
   data: ApiUser[];
+  subscription_meta?: Record<string, AdminUserSubscriptionMeta>;
   links?: {
     first: string | null;
     last: string | null;
@@ -2992,4 +3163,79 @@ export async function getPasskeyStatus(): Promise<PasskeyStatusResponse> {
   return apiRequest<PasskeyStatusResponse>("/auth/passkey/status", {
     method: "GET",
   });
+}
+
+export type UserDevice = {
+  id: string;
+  device_type: string | null;
+  browser: string | null;
+  platform: string | null;
+  registered_at: string | null;
+  last_seen_at: string | null;
+  current: boolean;
+};
+
+export type UserDevicesResponse = {
+  success: boolean;
+  data: {
+    devices: UserDevice[];
+  };
+};
+
+export type RemoveUserDeviceResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    current_device_removed: boolean;
+  };
+};
+
+function getUserDeviceHeaders(): Headers {
+  const headers = new Headers();
+
+  if (typeof window !== "undefined") {
+    const token = window.localStorage.getItem(
+      "crypticx_user_device_token",
+    );
+
+    if (token) {
+      headers.set("X-User-Device-Token", token);
+    }
+  }
+
+  return headers;
+}
+
+export async function getUserDevices(): Promise<UserDevicesResponse> {
+  return apiRequest<UserDevicesResponse>(
+    "/account/devices",
+    {
+      headers: getUserDeviceHeaders(),
+    },
+  );
+}
+
+export async function removeUserDevice(
+  deviceId: string,
+): Promise<RemoveUserDeviceResponse> {
+  const response = await apiRequest<RemoveUserDeviceResponse>(
+    `/account/devices/${encodeURIComponent(deviceId)}`,
+    {
+      method: "DELETE",
+      headers: getUserDeviceHeaders(),
+    },
+  );
+
+  if (
+    typeof window !== "undefined" &&
+    response.data.current_device_removed
+  ) {
+    window.localStorage.removeItem(
+      "crypticx_user_device_token",
+    );
+    window.localStorage.removeItem("crypticx_token");
+    window.sessionStorage.removeItem("crypticx_token");
+  }
+
+  return response;
 }

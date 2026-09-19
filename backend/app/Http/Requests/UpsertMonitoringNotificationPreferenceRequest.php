@@ -43,6 +43,25 @@ class UpsertMonitoringNotificationPreferenceRequest extends FormRequest
                 'min:1',
                 'max:100',
             ],
+
+            'daily_digest_enabled' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'daily_digest_timezone' => [
+                'sometimes',
+                'string',
+                'timezone',
+                'max:64',
+            ],
+
+            'daily_digest_hour' => [
+                'sometimes',
+                'integer',
+                'min:0',
+                'max:23',
+            ],
         ];
     }
 }

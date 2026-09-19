@@ -114,6 +114,7 @@ export default function Navbar() {
     { href: "/monitoring", label: "Monitoring" },
     { href: "/docs", label: "Docs" },
     { href: "/profile", label: "Profile" },
+    { href: "/profile#device-security", label: "Device Security" },
   ];
 
   const adminLinks: NavLink[] = [

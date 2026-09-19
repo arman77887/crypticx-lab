@@ -27,6 +27,9 @@ class MonitoringNotificationPreference extends Model
         'email_enabled',
         'event_types',
         'minimum_risk_delta',
+        'daily_digest_enabled',
+        'daily_digest_timezone',
+        'daily_digest_hour',
     ];
 
     protected function casts(): array
@@ -35,6 +38,8 @@ class MonitoringNotificationPreference extends Model
             'email_enabled' => 'boolean',
             'event_types' => 'array',
             'minimum_risk_delta' => 'integer',
+            'daily_digest_enabled' => 'boolean',
+            'daily_digest_hour' => 'integer',
         ];
     }
 

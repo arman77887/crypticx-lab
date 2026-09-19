@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
+use Database\Seeders\RbacSeeder;
 
 class ReportOwnershipTest extends TestCase
 {
@@ -74,6 +75,7 @@ class ReportOwnershipTest extends TestCase
 
     private function grantReportPermissions(User $user): void
     {
+        $this->seed(RbacSeeder::class);
         $permissions = Permission::query()
             ->whereIn('slug', [
                 'reports.view',
