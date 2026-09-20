@@ -36,6 +36,12 @@ class BillingManager
             );
         }
 
+        if ($provider === 'polar') {
+            return app(
+                PolarBillingGateway::class
+            );
+        }
+
         throw new BillingUnavailableException(
             'The configured billing provider does not have an installed adapter.'
         );

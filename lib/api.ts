@@ -2970,6 +2970,7 @@ export type BillingCheckoutResponse = {
   data: {
     transaction_id: string;
     provider: string;
+    checkout_url?: string;
   };
 };
 

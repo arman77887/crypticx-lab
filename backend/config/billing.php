@@ -33,6 +33,23 @@ return [
         ],
     ],
 
+    'polar' => [
+        'environment' => env('POLAR_ENVIRONMENT', 'production'),
+
+        'access_token' => env('POLAR_ACCESS_TOKEN'),
+
+        'webhook_secret' => env('POLAR_WEBHOOK_SECRET'),
+
+        'products' => [
+            'professional' => env(
+                'POLAR_PRODUCT_PROFESSIONAL'
+            ),
+            'team' => env(
+                'POLAR_PRODUCT_TEAM'
+            ),
+        ],
+    ],
+
     'frontend_url' => rtrim(
         (string) env(
             'FRONTEND_URL',

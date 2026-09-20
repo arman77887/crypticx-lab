@@ -179,7 +179,7 @@ export default function PricingPage() {
     };
   }, []);
 
-  async function openPaddleCheckout(
+  async function openBillingCheckout(
     planCode: "professional" | "team",
   ) {
     if (!getStoredToken()) {
@@ -197,32 +197,70 @@ export default function PricingPage() {
           planCode,
         );
 
-      if (
-        !checkout.data.transaction_id.startsWith(
-          "txn_",
-        )
-      ) {
-        throw new Error(
-          "Invalid Paddle transaction returned.",
+      if (checkout.data.provider === "polar") {
+        const checkoutUrl =
+          checkout.data.checkout_url;
+
+        if (!checkoutUrl) {
+          throw new Error(
+            "Invalid Polar checkout URL returned.",
+          );
+        }
+
+        const url = new URL(checkoutUrl);
+
+        if (
+          url.protocol !== "https:" ||
+          (
+            url.hostname !== "polar.sh" &&
+            !url.hostname.endsWith(".polar.sh")
+          )
+        ) {
+          throw new Error(
+            "Untrusted Polar checkout URL returned.",
+          );
+        }
+
+        window.location.assign(
+          checkoutUrl,
         );
+        return;
       }
 
-      const paddle = await getPaddle();
+      if (checkout.data.provider === "paddle") {
+        if (
+          !checkout.data.transaction_id.startsWith(
+            "txn_",
+          )
+        ) {
+          throw new Error(
+            "Invalid Paddle transaction returned.",
+          );
+        }
 
-      if (!paddle) {
-        throw new Error(
-          "Paddle checkout could not initialize.",
-        );
+        const paddle = await getPaddle();
+
+        if (!paddle) {
+          throw new Error(
+            "Paddle checkout could not initialize.",
+          );
+        }
+
+        paddle.Checkout.open({
+          transactionId:
+            checkout.data.transaction_id,
+          settings: {
+            displayMode: "overlay",
+            variant: "one-page",
+          },
+        });
+
+        return;
       }
 
-      paddle.Checkout.open({
-        transactionId:
-          checkout.data.transaction_id,
-        settings: {
-          displayMode: "overlay",
-          variant: "one-page",
-        },
-      });
+      throw new Error(
+        "Unsupported billing provider.",
+      );
     } catch (error) {
       setCheckoutError(
         error instanceof Error
@@ -431,7 +469,7 @@ export default function PricingPage() {
                           checkoutPlan === plan.code
                         }
                         onClick={() =>
-                          void openPaddleCheckout(
+                          void openBillingCheckout(
                             plan.code as
                               | "professional"
                               | "team",
@@ -441,7 +479,7 @@ export default function PricingPage() {
                       >
                         {checkoutPlan === plan.code
                           ? "Opening Checkout…"
-                          : "Upgrade with Paddle"}
+                          : "Upgrade Plan"}
                       </button>
                     ) : (
                       <>

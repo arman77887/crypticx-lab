@@ -29,6 +29,11 @@ Route::prefix('v1')->group(function () {
         'handle',
     ])->middleware('throttle:120,1');
 
+    Route::post('/webhooks/polar', [
+        \App\Http\Controllers\Api\V1\PolarWebhookController::class,
+        'handle',
+    ])->middleware('throttle:120,1');
+
     Route::post(
         '/auth/register',
         [AuthController::class, 'register']
