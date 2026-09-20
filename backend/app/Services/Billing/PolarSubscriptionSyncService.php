@@ -45,7 +45,10 @@ class PolarSubscriptionSyncService
             (string) ($data['id'] ?? '')
         );
 
-        if (! $this->validUuid($providerSubscriptionId)) {
+        if (
+            $providerSubscriptionId === ''
+            || strlen($providerSubscriptionId) > 191
+        ) {
             throw new InvalidArgumentException(
                 'Invalid Polar subscription id.'
             );

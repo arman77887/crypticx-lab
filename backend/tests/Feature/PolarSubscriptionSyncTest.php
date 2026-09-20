@@ -75,6 +75,38 @@ class PolarSubscriptionSyncTest extends TestCase
         );
     }
 
+    public function test_non_uuid_subscription_id_is_accepted(): void
+    {
+        $user = User::factory()->create();
+
+        $subscriptionId =
+            'polar_subscription_external_12345';
+
+        $subscription = $this->sync(
+            $this->payload(
+                $user,
+                $subscriptionId,
+                'subscription.active',
+                'active',
+                '2026-09-20T12:00:00Z'
+            )
+        );
+
+        $this->assertSame(
+            $subscriptionId,
+            $subscription->provider_subscription_id
+        );
+
+        $this->assertSame(
+            Subscription::STATUS_ACTIVE,
+            $subscription->status
+        );
+
+        $this->assertTrue(
+            $subscription->grantsEntitlements()
+        );
+    }
+
     public function test_lifecycle_active_past_due_active_then_revoked(): void
     {
         $user = User::factory()->create();
