@@ -13,8 +13,12 @@ class PolarWebhookIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
+    private const SIGNING_KEY =
+        'crypticx-polar-integration-signing-key';
+
     private const SECRET =
-        'whsec_test_crypticx_integration_secret';
+        'whsec_'
+        . 'Y3J5cHRpY3gtcG9sYXItaW50ZWdyYXRpb24tc2lnbmluZy1rZXk=';
 
     private const PRODUCT =
         '0cc0d541-5089-4b34-bd72-ff1572300847';
@@ -299,7 +303,7 @@ class PolarWebhookIntegrationTest extends TestCase
                     . $timestamp
                     . '.'
                     . $body,
-                self::SECRET,
+                self::SIGNING_KEY,
                 true
             )
         );

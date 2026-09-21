@@ -84,14 +84,31 @@ class PolarWebhookVerifier
             . $rawBody;
 
         /*
-         * Polar's current production signing behavior uses the
-         * literal webhook secret bytes as the HMAC-SHA256 key.
+         * Polar uses the Standard Webhooks secret format.
+         * Remove the whsec_ prefix and Base64-decode the
+         * remaining value before using it as the HMAC key.
          */
+        if (! str_starts_with($secret, 'whsec_')) {
+            throw new RuntimeException(
+                'Invalid Polar webhook secret format.'
+            );
+        }
+
+        $encodedKey = substr($secret, strlen('whsec_'));
+
+        $signingKey = base64_decode($encodedKey, true);
+
+        if ($signingKey === false || $signingKey === '') {
+            throw new RuntimeException(
+                'Invalid Polar webhook signing key.'
+            );
+        }
+
         $expected = base64_encode(
             hash_hmac(
                 'sha256',
                 $signedContent,
-                $secret,
+                $signingKey,
                 true
             )
         );

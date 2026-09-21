@@ -8,8 +8,12 @@ use Tests\TestCase;
 
 class PolarWebhookVerifierTest extends TestCase
 {
+    private const SIGNING_KEY =
+        'crypticx-polar-test-signing-key';
+
     private const SECRET =
-        'whsec_test_crypticx_polar_secret';
+        'whsec_'
+        . 'Y3J5cHRpY3gtcG9sYXItdGVzdC1zaWduaW5nLWtleQ==';
 
     protected function setUp(): void
     {
@@ -259,7 +263,7 @@ class PolarWebhookVerifierTest extends TestCase
             hash_hmac(
                 'sha256',
                 $signedContent,
-                self::SECRET,
+                self::SIGNING_KEY,
                 true
             )
         );
