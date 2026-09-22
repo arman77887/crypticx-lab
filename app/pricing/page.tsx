@@ -3,10 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  initializePaddle,
-  type Paddle,
-} from "@paddle/paddle-js";
-import {
   createBillingCheckout,
   getAccountSubscription,
   getBillingStatus,
@@ -15,35 +11,6 @@ import {
   type AccountSubscriptionState,
   type PremiumPlan,
 } from "@/lib/api";
-
-const paddleClientToken =
-  process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? "";
-
-const paddleEnvironment =
-  process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === "sandbox"
-    ? "sandbox"
-    : "production";
-
-let paddlePromise: Promise<Paddle | undefined> | null = null;
-
-function getPaddle(): Promise<Paddle | undefined> {
-  if (!paddleClientToken) {
-    return Promise.reject(
-      new Error(
-        "Paddle client-side token is not configured.",
-      ),
-    );
-  }
-
-  if (!paddlePromise) {
-    paddlePromise = initializePaddle({
-      token: paddleClientToken,
-      environment: paddleEnvironment,
-    });
-  }
-
-  return paddlePromise;
-}
 
 const planOrder = ["free", "professional", "team"] as const;
 
@@ -224,37 +191,6 @@ export default function PricingPage() {
         window.location.assign(
           checkoutUrl,
         );
-        return;
-      }
-
-      if (checkout.data.provider === "paddle") {
-        if (
-          !checkout.data.transaction_id.startsWith(
-            "txn_",
-          )
-        ) {
-          throw new Error(
-            "Invalid Paddle transaction returned.",
-          );
-        }
-
-        const paddle = await getPaddle();
-
-        if (!paddle) {
-          throw new Error(
-            "Paddle checkout could not initialize.",
-          );
-        }
-
-        paddle.Checkout.open({
-          transactionId:
-            checkout.data.transaction_id,
-          settings: {
-            displayMode: "overlay",
-            variant: "one-page",
-          },
-        });
-
         return;
       }
 
