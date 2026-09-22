@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useMemo, useState } from "react";
 import {
   AccountEntitlements,
@@ -248,7 +250,7 @@ export default function ScannerPage() {
     <main className="min-h-screen bg-[#09090b] text-white">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <header className="flex h-20 items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center">
               <img
                 src="/brand/crypticx2.png"
@@ -267,14 +269,14 @@ export default function ScannerPage() {
                 Security Intelligence
               </div>
             </div>
-          </a>
+          </Link>
 
-          <a
+          <Link
             href="/"
             className="rounded-xl bg-[#09090b] px-4 py-2.5 text-sm font-semibold text-white/65 shadow-[5px_5px_10px_#000000,-5px_-5px_10px_#171719]"
           >
             ← Back home
-          </a>
+          </Link>
         </header>
 
         <section className="py-14 sm:py-20">
@@ -581,12 +583,12 @@ export default function ScannerPage() {
                 Close
               </button>
 
-              <a
+              <Link
                 href="/pricing"
                 className="rounded-2xl bg-[#17212b] px-5 py-3 text-center text-sm font-bold text-white shadow-[6px_6px_14px_#000000,-5px_-5px_12px_#171719]"
               >
                 View plans
-              </a>
+              </Link>
             </div>
           </div>
         </div>

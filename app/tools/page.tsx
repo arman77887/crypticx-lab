@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const categories = [
   {
     icon: "◎",
@@ -81,7 +83,7 @@ export default function ToolsPage() {
     <main className="min-h-screen bg-[#09090b] text-white">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <header className="flex h-20 items-center justify-between">
-          <a href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center">
               <img
                 src="/brand/crypticx2.png"
@@ -97,21 +99,21 @@ export default function ToolsPage() {
                 Security Intelligence
               </div>
             </div>
-          </a>
+          </Link>
 
           <div className="flex items-center gap-3">
-            <a
+            <Link
               href="/scanner"
               className="hidden rounded-xl px-4 py-2.5 text-sm font-semibold text-white/65 sm:block"
             >
               Scanner
-            </a>
-            <a
+            </Link>
+            <Link
               href="/"
               className="rounded-xl bg-[#09090b] px-4 py-2.5 text-sm font-semibold text-white/65 shadow-[5px_5px_10px_#000000,-5px_-5px_10px_#171719]"
             >
               ← Home
-            </a>
+            </Link>
           </div>
         </header>
 
@@ -156,7 +158,7 @@ export default function ToolsPage() {
 
                 <div className="mt-5 space-y-2">
                   {category.tools.map((tool) => (
-                    <a
+                    <Link
                       key={tool}
                       href={
                         category.title === "DNS Intelligence" &&
@@ -318,16 +320,16 @@ export default function ToolsPage() {
                     >
                       <span>{tool}</span>
                       <span>→</span>
-                    </a>
+                    </Link>
                   ))}
                 </div>
 
-                <a
+                <Link
                   href="/scanner"
                   className="mt-6 block text-xs font-bold uppercase tracking-widest text-red-300/80"
                 >
                   Open category →
-                </a>
+                </Link>
               </section>
             ))}
           </div>
@@ -348,12 +350,12 @@ export default function ToolsPage() {
                 </p>
               </div>
 
-              <a
+              <Link
                 href="/scanner"
                 className="shrink-0 rounded-2xl bg-[#09090b] px-6 py-4 text-center text-sm font-bold text-white transition hover:-translate-y-0.5"
               >
                 Open Security Scanner
-              </a>
+              </Link>
             </div>
           </section>
         </section>
@@ -362,9 +364,9 @@ export default function ToolsPage() {
           <div className="flex flex-col justify-between gap-4 text-sm text-white/35 sm:flex-row">
             <span className="font-bold text-[#273541]">CrypticX Lab</span>
             <div className="flex gap-5">
-              <a href="/docs" className="hover:text-white">Docs</a>
-              <a href="/labs" className="hover:text-white">Labs</a>
-              <a href="/pricing" className="hover:text-white">Pricing</a>
+              <Link href="/docs" className="hover:text-white">Docs</Link>
+              <Link href="/labs" className="hover:text-white">Labs</Link>
+              <Link href="/pricing" className="hover:text-white">Pricing</Link>
             </div>
           </div>
         </footer>

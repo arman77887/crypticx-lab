@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   AccountEntitlements,
@@ -26,6 +27,7 @@ type User = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [entitlements, setEntitlements] =
     useState<AccountEntitlements | null>(null);
@@ -50,7 +52,7 @@ export default function ProfilePage() {
 
     async function loadProfile() {
       if (!getStoredToken()) {
-        window.location.href = "/login";
+        router.replace("/login");
         return;
       }
 
@@ -145,7 +147,7 @@ export default function ProfilePage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [router]);
 
   const roles =
     user?.roles?.map((role) => role.name).join(", ") ||
@@ -177,7 +179,7 @@ export default function ProfilePage() {
       const response = await removeUserDevice(device.id);
 
       if (response.data.current_device_removed) {
-        window.location.href = "/login";
+        router.replace("/login");
         return;
       }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   createBillingCheckout,
@@ -77,6 +78,7 @@ function formatLimit(value: number | null): string {
 }
 
 export default function PricingPage() {
+  const router = useRouter();
   const [plans, setPlans] = useState<Record<string, PremiumPlan>>({});
   const [subscription, setSubscription] =
     useState<AccountSubscriptionState | null>(null);
@@ -150,8 +152,7 @@ export default function PricingPage() {
     planCode: "professional" | "team",
   ) {
     if (!getStoredToken()) {
-      window.location.href =
-        "/login?next=/pricing";
+      router.push("/login?next=/pricing");
       return;
     }
 
