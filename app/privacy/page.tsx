@@ -45,7 +45,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-white">4. Payments</h2>
           <p className="mt-2">
-            Payments are processed by Paddle. Payment information submitted at
+            Payments are processed by Polar. Payment information submitted at
             checkout is handled by the payment provider according to its own
             privacy and security practices. CrypticX Lab does not need to store
             full payment card details to provide subscriptions.
