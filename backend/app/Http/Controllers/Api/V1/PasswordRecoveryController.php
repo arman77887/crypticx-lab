@@ -127,7 +127,7 @@ class PasswordRecoveryController extends Controller
             'password' => [
                 'required',
                 'string',
-                'min:12',
+                'min:8',
                 'confirmed',
             ],
         ]);
