@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Database\Seeders\RbacSeeder;
 use App\Models\MonitoringPolicy;
 use App\Models\Permission;
 use App\Models\Role;
@@ -15,6 +16,13 @@ use Tests\TestCase;
 
 class MonitoringPolicyApiTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(RbacSeeder::class);
+    }
+
     private array $createdUserIds = [];
     private array $createdTargetIds = [];
     private array $createdRoleIds = [];
