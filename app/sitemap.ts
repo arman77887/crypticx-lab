@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://crypticxlab.duckdns.org";
+  const baseUrl = "https://crypticxlab.crxhub.org";
 
   const routes = [
     "",

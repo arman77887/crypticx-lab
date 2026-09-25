@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = "https://crypticxlab.duckdns.org";
+  const baseUrl = "https://crypticxlab.crxhub.org";
 
   return {
     rules: {

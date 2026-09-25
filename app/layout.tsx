@@ -9,23 +9,23 @@ const structuredData = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://crypticxlab.duckdns.org/#website",
-      url: "https://crypticxlab.duckdns.org/",
+      "@id": "https://crypticxlab.crxhub.org/#website",
+      url: "https://crypticxlab.crxhub.org/",
       name: "CrypticX Lab",
       description:
         "Cybersecurity intelligence platform for authorized security assessments, network analysis, DNS intelligence, SSL/TLS analysis, and API security.",
       publisher: {
-        "@id": "https://crypticxlab.duckdns.org/#organization",
+        "@id": "https://crypticxlab.crxhub.org/#organization",
       },
     },
     {
       "@type": "Organization",
-      "@id": "https://crypticxlab.duckdns.org/#organization",
+      "@id": "https://crypticxlab.crxhub.org/#organization",
       name: "CrypticX Lab",
-      url: "https://crypticxlab.duckdns.org/",
+      url: "https://crypticxlab.crxhub.org/",
       logo: {
         "@type": "ImageObject",
-        url: "https://crypticxlab.duckdns.org/brand/crypticx-lab-logo.svg",
+        url: "https://crypticxlab.crxhub.org/brand/crypticx-lab-logo.svg",
       },
     },
   ],
@@ -44,7 +44,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://crypticxlab.duckdns.org"),
+  metadataBase: new URL("https://crypticxlab.crxhub.org"),
 
   title: {
     default: "CrypticX Lab | Cybersecurity Intelligence Platform",
@@ -86,7 +86,7 @@ export const metadata: Metadata = {
 
   openGraph: {
     type: "website",
-    url: "https://crypticxlab.duckdns.org",
+    url: "https://crypticxlab.crxhub.org",
     siteName: "CrypticX Lab",
     title: "CrypticX Lab | Cybersecurity Intelligence Platform",
     description:
