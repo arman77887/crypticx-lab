@@ -22,6 +22,8 @@ class WebAuthnChallenge extends Model
     protected $fillable = [
         'user_id',
         'purpose',
+        'rp_id',
+        'origin',
         'challenge',
         'options_json',
         'expires_at',

@@ -18,6 +18,7 @@ class WebAuthnCredential extends Model
 
     protected $fillable = [
         'user_id',
+        'rp_id',
         'credential_id',
         'credential_id_hash',
         'credential_source',

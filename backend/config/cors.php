@@ -12,7 +12,6 @@ return [
     'allowed_origins' => [],
 
     'allowed_origins_patterns' => [
-        '#^https://crypticxlab\\.duckdns\\.org$#',
         '#^https://crypticxlab\\.crxhub\\.org$#',
     ],
 

@@ -28,9 +28,25 @@ use Webauthn\PublicKeyCredentialUserEntity;
 
 class WebAuthnService
 {
-    public const RP_ID = 'crypticxlab.duckdns.org';
+    public const RP_ID = 'crypticxlab.crxhub.org';
 
-    public const ORIGIN = 'https://crypticxlab.duckdns.org';
+    public const ORIGIN = 'https://crypticxlab.crxhub.org';
+
+    private function currentRelyingParty(): array
+    {
+        $host = strtolower(request()->getHost());
+
+        if ($host !== self::RP_ID) {
+            throw new RuntimeException(
+                'WebAuthn request host is not an authorized relying party.'
+            );
+        }
+
+        return [
+            'rp_id' => self::RP_ID,
+            'origin' => self::ORIGIN,
+        ];
+    }
 
     public const CHALLENGE_TTL_MINUTES = 5;
 
@@ -50,9 +66,13 @@ class WebAuthnService
     ): array {
         $challenge = random_bytes(32);
 
+        $relyingParty = $this->currentRelyingParty();
+        $rpId = $relyingParty['rp_id'];
+        $origin = $relyingParty['origin'];
+
         $rp = PublicKeyCredentialRpEntity::create(
             'CrypticX Lab',
-            self::RP_ID
+            $rpId
         );
 
         $webAuthnUser = PublicKeyCredentialUserEntity::create(
@@ -100,6 +120,8 @@ class WebAuthnService
         $challengeRow = WebAuthnChallenge::create([
             'user_id' => $user->id,
             'purpose' => WebAuthnChallenge::PURPOSE_REGISTER,
+            'rp_id' => $rpId,
+            'origin' => $origin,
             'challenge' => rtrim(
                 strtr(
                     base64_encode($challenge),
@@ -172,8 +194,11 @@ class WebAuthnService
 
         $factory = new CeremonyStepManagerFactory();
 
+        $rpId = $challenge->rp_id ?: self::RP_ID;
+        $origin = $challenge->origin ?: self::ORIGIN;
+
         $factory->setAllowedOrigins([
-            self::ORIGIN,
+            $origin,
         ]);
 
         $validator =
@@ -184,7 +209,7 @@ class WebAuthnService
         $record = $validator->check(
             $publicKeyCredential->response,
             $options,
-            self::RP_ID
+            $rpId
         );
 
         if ($record->uvInitialized !== true) {
@@ -206,6 +231,7 @@ class WebAuthnService
 
         $model = WebAuthnCredential::create([
             'user_id' => $user->id,
+            'rp_id' => $rpId,
             'credential_id' => $credentialId,
             'credential_id_hash' => hash(
                 'sha256',
@@ -232,8 +258,13 @@ class WebAuthnService
 
     public function createAuthenticationOptions(User $user): array
     {
+        $relyingParty = $this->currentRelyingParty();
+        $rpId = $relyingParty['rp_id'];
+        $origin = $relyingParty['origin'];
+
         $credentials = $user->webAuthnCredentials()
             ->whereNull('revoked_at')
+            ->where('rp_id', $rpId)
             ->get();
 
         if ($credentials->isEmpty()) {
@@ -262,7 +293,7 @@ class WebAuthnService
 
         $options = PublicKeyCredentialRequestOptions::create(
             challenge: $challengeBytes,
-            rpId: self::RP_ID,
+            rpId: $rpId,
             allowCredentials: $allowCredentials,
             userVerification:
                 PublicKeyCredentialRequestOptions::USER_VERIFICATION_REQUIREMENT_REQUIRED,
@@ -277,6 +308,8 @@ class WebAuthnService
         $challengeRow = WebAuthnChallenge::create([
             'user_id' => $user->id,
             'purpose' => WebAuthnChallenge::PURPOSE_AUTHENTICATE,
+            'rp_id' => $rpId,
+            'origin' => $origin,
             'challenge' => rtrim(
                 strtr(
                     base64_encode($challengeBytes),
@@ -377,8 +410,17 @@ class WebAuthnService
 
         $factory = new CeremonyStepManagerFactory();
 
+        $rpId = $challenge->rp_id ?: self::RP_ID;
+        $origin = $challenge->origin ?: self::ORIGIN;
+
+        if ($credentialModel->rp_id !== $rpId) {
+            throw new RuntimeException(
+                'Passkey relying party does not match this authentication challenge.'
+            );
+        }
+
         $factory->setAllowedOrigins([
-            self::ORIGIN,
+            $origin,
         ]);
 
         $validator =
@@ -390,7 +432,7 @@ class WebAuthnService
             $record,
             $publicKeyCredential->response,
             $options,
-            self::RP_ID,
+            $rpId,
             $user->id
         );
 
