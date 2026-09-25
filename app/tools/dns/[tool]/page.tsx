@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import ToolIntro from "@/components/ToolIntro";
+import { getToolSeo } from "@/lib/tool-seo";
 import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
 import {
@@ -33,6 +35,7 @@ type Tool = keyof typeof tools;
 export default function Page() {
   const params = useParams();
   const tool = String(params.tool ?? "") as Tool;
+  const seo = getToolSeo("dns", tool);
 
   const [hostname, setHostname] = useState("");
   const [data, setData] = useState<Obj | null>(null);
@@ -93,6 +96,13 @@ export default function Page() {
         </Link>
 
         <h1 className="mt-8 text-4xl font-black">{tools[tool]}</h1>
+
+        {seo && (
+          <ToolIntro
+            description={seo.description}
+            context="Use this tool to review public DNS information for domains you are authorized to assess."
+          />
+        )}
 
         <form onSubmit={submit} className="cx-card mt-7 p-6">
           <input

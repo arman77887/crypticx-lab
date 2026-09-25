@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import ToolIntro from "@/components/ToolIntro";
+import { getToolSeo } from "@/lib/tool-seo";
 import { FormEvent, useState } from "react";
 import { useParams } from "next/navigation";
 import {
@@ -148,6 +150,7 @@ export default function LocalLabToolPage({
   >;
 
   const config = definitions[tool];
+  const seo = getToolSeo(category, tool);
 
   const [input, setInput] = useState("");
   const [data, setData] = useState<Obj | null>(null);
@@ -236,6 +239,17 @@ export default function LocalLabToolPage({
         <h1 className="mt-3 text-4xl font-black">
           {config.title}
         </h1>
+
+        {seo && (
+          <ToolIntro
+            description={seo.description}
+            context={
+              category === "sql"
+                ? "Analyze supplied SQL text in the controlled CrypticX Lab environment. Do not submit secrets or production credentials."
+                : "Analyze only the data you intentionally provide. Avoid submitting secrets, credentials, or unnecessary personal information."
+            }
+          />
+        )}
 
         {category === "sql" && (
           <p className="mt-3 text-sm text-white/45">
