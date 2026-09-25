@@ -1,36 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CrypticX Lab
 
-## Getting Started
+**Security intelligence for authorized testing and defensive analysis.**
 
-First, run the development server:
+CrypticX Lab is a cybersecurity intelligence platform that brings authorized security assessment, reconnaissance, risk intelligence, and defensive analysis into one focused workspace.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Live Platform:** https://crypticxlab.crxhub.org
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> CrypticX Lab is intended for authorized security testing, defensive research, education, and systems you own or have explicit permission to assess.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Overview
 
-## Learn More
+Security assessment often requires moving between multiple disconnected tools and manually correlating their results.
 
-To learn more about Next.js, take a look at the following resources:
+CrypticX Lab provides a unified workflow:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Discover → Assess → Analyze → Prioritize → Remediate**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The platform combines target management, security assessments, findings, evidence, lifecycle tracking, reporting, and security intelligence.
 
-## Deploy on Vercel
+## Core Capabilities
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Web Security Intelligence
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Analyze authorized web targets for security-relevant HTTP behavior and configuration, including headers, redirects, cookies, TLS-related signals, and defensive indicators.
+
+### DNS Intelligence
+
+Inspect DNS infrastructure and records including A, AAAA, MX, NS, TXT, CNAME, CAA, and DNSSEC-related signals.
+
+### SSL/TLS Intelligence
+
+Inspect TLS configuration and certificate information to identify security and configuration issues.
+
+### API Security
+
+Perform bounded, authorized API security analysis through the CrypticX Lab assessment workflow.
+
+### Recon & Network Intelligence
+
+Collect and organize authorized network exposure and reconnaissance signals for defensive analysis.
+
+### Findings & Risk Intelligence
+
+Security findings support:
+
+- Severity
+- Confidence
+- Recurrence
+- Asset importance
+- Risk scoring
+- Evidence
+- Remediation guidance
+- Finding status tracking
+- First-seen and last-seen information
+
+### Assessment Management
+
+Create authorized targets, launch assessments, review findings, and maintain assessment history from one workspace.
+
+### Reporting & Monitoring
+
+Generate security assessment reports and use plan-aware monitoring for recurring defensive assessment workflows.
+
+---
+
+## Technology Stack
+
+**Frontend:** Next.js 14, React, TypeScript, Tailwind CSS
+
+**Backend:** PHP 8.2+, Laravel 11, Laravel Sanctum
+
+**Platform:** Queue-based assessment processing, WebAuthn support, role-based access control, target authorization, quotas, and entitlements.
+
+---
+
+## Responsible Use
+
+Use CrypticX Lab only for systems you own or have explicit permission to test.
+
+Do not use CrypticX Lab to access, disrupt, scan, or test systems without authorization.
+
+---
+
+## Project Status
+
+CrypticX Lab is under active development. Interfaces, scanner capabilities, APIs, and deployment requirements may evolve.
+
+## Live Platform
+
+https://crypticxlab.crxhub.org
+
+## License
+
+A project license has not yet been published in this repository.
+
+Until a license is added, the presence of source code in this repository should not be interpreted as granting permissions beyond those provided by applicable copyright law.
+
+---
+
+**CrypticX Lab — Security intelligence for authorized testing.**
