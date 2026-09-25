@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getToolSeo } from "@/lib/tool-seo";
 
 export async function generateMetadata({
   params,
@@ -6,8 +7,25 @@ export async function generateMetadata({
   params: Promise<{ tool: string }>;
 }): Promise<Metadata> {
   const { tool } = await params;
+  const seo = getToolSeo("sql", tool);
+
+  if (!seo) {
+    return {
+      title: "Tool Not Found",
+      robots: {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
+      },
+    };
+  }
 
   return {
+    title: seo.title,
+    description: seo.description,
     alternates: {
       canonical: "/tools/sql/" + encodeURIComponent(tool),
     },
