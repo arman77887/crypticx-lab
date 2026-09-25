@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
+  alternates: {
+    canonical: "/refund",
+  },
   title: "Refund Policy",
   description: "Refund Policy for CrypticX Lab subscriptions.",
 };

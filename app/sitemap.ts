@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/scanner",
     "/labs",
     "/docs",
+    "/security",
     "/pricing",
     "/contact",
     "/terms",
@@ -27,7 +28,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
         : route === "/tools" ||
             route === "/scanner" ||
             route === "/labs" ||
-            route === "/docs"
+            route === "/docs" ||
+            route === "/security"
           ? 0.8
           : 0.6,
   }));
