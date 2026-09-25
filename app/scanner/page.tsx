@@ -74,6 +74,14 @@ export default function ScannerPage() {
   );
 
   useEffect(() => {
+    const savedAssessmentId =
+      window.sessionStorage.getItem("crypticx_scanner_assessment");
+
+    if (savedAssessmentId) {
+      setAssessmentId(savedAssessmentId);
+      setBusy(true);
+    }
+
     if (!getStoredToken()) return;
 
     let cancelled = false;
@@ -116,25 +124,53 @@ export default function ScannerPage() {
           assessment.status === "completed" ||
           assessment.status === "failed"
         ) {
-          const [findingsResponse, entitlementsResponse] =
-            await Promise.all([
-              getFindings({
-                assessment_id: assessmentId,
-                per_page: 100,
-              }),
-              getAccountEntitlements().catch(() => null),
-            ]);
+          const responseFindings = Array.isArray(assessment.findings)
+            ? assessment.findings
+            : [];
 
           if (!cancelled) {
-            setFindings(findingsResponse.data ?? []);
-
-            if (entitlementsResponse) {
-              setEntitlements(entitlementsResponse.data);
-            }
-
             setStatus(assessment.status);
             setProgress(Number(assessment.progress ?? 100));
+            setFindings(responseFindings);
             setBusy(false);
+
+            const reloadKey = `crypticx_scanner_reloaded_${assessmentId}`;
+
+            if (
+              assessment.status === "completed" &&
+              !window.sessionStorage.getItem(reloadKey)
+            ) {
+              window.sessionStorage.setItem(reloadKey, "1");
+              window.sessionStorage.setItem(
+                "crypticx_scanner_assessment",
+                assessmentId,
+              );
+              window.location.reload();
+              return;
+            }
+          }
+
+          try {
+            const [findingsResponse, entitlementsResponse] =
+              await Promise.all([
+                getFindings({
+                  assessment_id: assessmentId,
+                  per_page: 100,
+                }),
+                getAccountEntitlements().catch(() => null),
+              ]);
+
+            if (!cancelled) {
+              setFindings(findingsResponse.data ?? responseFindings);
+
+              if (entitlementsResponse) {
+                setEntitlements(entitlementsResponse.data);
+              }
+            }
+          } catch {
+            // The assessment response already contains the terminal
+            // state and loaded findings, so secondary refresh failure
+            // must not prevent the completed result from rendering.
           }
 
           return;
@@ -213,6 +249,10 @@ export default function ScannerPage() {
       );
 
       setAssessmentId(assessmentResponse.data.id);
+      window.sessionStorage.setItem(
+        "crypticx_scanner_assessment",
+        assessmentResponse.data.id,
+      );
       setStatus(assessmentResponse.data.status);
       setProgress(Number(assessmentResponse.data.progress ?? 0));
 
