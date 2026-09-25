@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import localFont from "next/font/local";
 import "./globals.css";
 import SiteShell from "@/components/SiteShell";
@@ -105,6 +106,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaMeasurementId =
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
   return (
     <html lang="en">
       <body
@@ -117,6 +121,23 @@ export default function RootLayout({
           }}
         />
         <SiteShell>{children}</SiteShell>
+
+        {gaMeasurementId ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaMeasurementId}');
+              `}
+            </Script>
+          </>
+        ) : null}
       </body>
     </html>
   );
