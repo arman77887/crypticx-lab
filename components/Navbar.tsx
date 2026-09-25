@@ -68,7 +68,7 @@ export default function Navbar() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -128,11 +128,46 @@ export default function Navbar() {
     { href: "/profile", label: "Profile" },
   ];
 
-  const mainLinks = user
-    ? isAdmin
-      ? adminLinks
-      : userLinks
+  const accountRoutePrefixes = [
+    "/dashboard",
+    "/profile",
+    "/findings",
+    "/monitoring",
+    "/notifications",
+    "/projects",
+    "/reports",
+    "/scans",
+    "/security",
+    "/settings",
+    "/targets",
+  ];
+
+  const isAccountRoute = accountRoutePrefixes.some(
+    (route) =>
+      pathname === route ||
+      pathname.startsWith(`${route}/`),
+  );
+
+  const publicAuthenticatedLinks: NavLink[] = user
+    ? [
+        ...publicLinks,
+        {
+          href: isAdmin ? "/admin" : "/dashboard",
+          label: isAdmin ? "Admin Console" : "Dashboard",
+        },
+        {
+          href: "/profile",
+          label: "Profile",
+        },
+      ]
     : publicLinks;
+
+  const mainLinks =
+    user && isAccountRoute
+      ? isAdmin
+        ? adminLinks
+        : userLinks
+      : publicAuthenticatedLinks;
 
   function isActive(href: string): boolean {
     if (href === "/") {

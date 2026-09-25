@@ -116,13 +116,24 @@ export default function ScannerPage() {
           assessment.status === "completed" ||
           assessment.status === "failed"
         ) {
-          const findingsResponse = await getFindings({
-            assessment_id: assessmentId,
-            per_page: 100,
-          });
+          const [findingsResponse, entitlementsResponse] =
+            await Promise.all([
+              getFindings({
+                assessment_id: assessmentId,
+                per_page: 100,
+              }),
+              getAccountEntitlements().catch(() => null),
+            ]);
 
           if (!cancelled) {
             setFindings(findingsResponse.data ?? []);
+
+            if (entitlementsResponse) {
+              setEntitlements(entitlementsResponse.data);
+            }
+
+            setStatus(assessment.status);
+            setProgress(Number(assessment.progress ?? 100));
             setBusy(false);
           }
 
