@@ -53,6 +53,7 @@ function severityClass(severity: string) {
   }
 }
 
+import { trackEvent } from "@/lib/analytics";
 export default function ScannerPage() {
   const [target, setTarget] = useState("");
   const [selected, setSelected] = useState("Web Security");
@@ -135,6 +136,18 @@ export default function ScannerPage() {
             setBusy(false);
 
             const reloadKey = `crypticx_scanner_reloaded_${assessmentId}`;
+            const completionEventKey =
+              `crypticx_ga_completed_${assessmentId}`;
+
+            if (
+              assessment.status === "completed" &&
+              !window.sessionStorage.getItem(completionEventKey)
+            ) {
+              trackEvent("assessment_completed", {
+                finding_count: responseFindings.length,
+              });
+              window.sessionStorage.setItem(completionEventKey, "1");
+            }
 
             if (
               assessment.status === "completed" &&
@@ -247,6 +260,10 @@ export default function ScannerPage() {
         targetResponse.data.id,
         selectedType.profile,
       );
+
+      trackEvent("assessment_started", {
+        assessment_profile: selectedType.profile,
+      });
 
       setAssessmentId(assessmentResponse.data.id);
       window.sessionStorage.setItem(

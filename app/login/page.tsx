@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
 import {
   login,
   verifyUserDevice,
@@ -79,6 +80,9 @@ export default function LoginPage() {
       return;
     }
 
+    trackEvent("login", {
+      method: "email",
+    });
     redirectAuthenticatedUser(response.data.user.roles);
   }
 
@@ -132,6 +136,9 @@ export default function LoginPage() {
         rememberLogin,
       );
 
+      trackEvent("login", {
+        method: "email_otp",
+      });
       redirectAuthenticatedUser(response.data.user.roles);
     } catch (err) {
       setError(

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { register } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -48,6 +49,9 @@ export default function RegisterPage() {
         passwordConfirmation,
       );
 
+      trackEvent("sign_up", {
+        method: "email",
+      });
       setSuccess(response.message);
     } catch (err) {
       setError(
