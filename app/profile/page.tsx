@@ -318,8 +318,30 @@ export default function ProfilePage() {
                   </h3>
 
                   <p className="mt-2 text-sm leading-6 text-[var(--cx-muted)]">
-                    Your current usage and account limits.
+                    Your current usage, feature access, and account limits.
                   </p>
+
+                  {entitlements && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span
+                        className={
+                          entitlements.premium_enabled
+                            ? "rounded-full border border-emerald-500/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300"
+                            : "rounded-full border border-amber-500/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300"
+                        }
+                      >
+                        {entitlements.premium_enabled
+                          ? "Premium System Active"
+                          : "Premium Temporarily Disabled"}
+                      </span>
+
+                      {!entitlements.premium_enabled && (
+                        <span className="rounded-full border border-emerald-500/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+                          Unlimited Commercial Usage
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <Link
@@ -336,36 +358,65 @@ export default function ProfilePage() {
                 </div>
               )}
 
+              {entitlements &&
+                entitlements.quota_mode === "unlimited_launch" && (
+                  <div className="mt-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-5">
+                    <div className="text-xs font-black uppercase tracking-[0.16em] text-emerald-300">
+                      Launch Access · Unlimited Usage
+                    </div>
+
+                    <p className="mt-2 text-sm leading-6 text-[var(--cx-muted)]">
+                      Premium subscriptions are temporarily disabled.
+                      Commercial usage limits are currently unlimited.
+                      Plan-specific features and security restrictions still apply.
+                    </p>
+                  </div>
+                )}
+
               {entitlements && (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <>
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   {[
-                    [
-                      "Assessments this month",
-                      entitlements.usage.assessments_monthly,
-                      entitlements.limits.assessments_monthly,
-                    ],
-                    [
-                      "Targets",
-                      entitlements.usage.targets_total,
-                      entitlements.limits.targets_total,
-                    ],
-                    [
-                      "Reports this month",
-                      entitlements.usage.reports_monthly,
-                      entitlements.limits.reports_monthly,
-                    ],
-                    [
-                      "Monitoring policies",
-                      entitlements.usage.monitoring_policies,
-                      entitlements.limits.monitoring_policies,
-                    ],
-                  ].map(([label, used, limit]) => {
-                    const usedNumber = Number(used);
+                    {
+                      label: "Assessments this month",
+                      used: entitlements.usage.assessments_monthly,
+                      limit: entitlements.limits.assessments_monthly,
+                      available: entitlements.capabilities.assessments,
+                    },
+                    {
+                      label: "Targets",
+                      used: entitlements.usage.targets_total,
+                      limit: entitlements.limits.targets_total,
+                      available: entitlements.capabilities.target_management,
+                    },
+                    {
+                      label: "Reports this month",
+                      used: entitlements.usage.reports_monthly,
+                      limit: entitlements.limits.reports_monthly,
+                      available: entitlements.capabilities.reports,
+                    },
+                    {
+                      label: "Monitoring policies",
+                      used: entitlements.usage.monitoring_policies,
+                      limit: entitlements.limits.monitoring_policies,
+                      available: entitlements.capabilities.monitoring,
+                    },
+                    {
+                      label: "Concurrent assessments",
+                      used: entitlements.usage.concurrent_assessments,
+                      limit: entitlements.limits.concurrent_assessments,
+                      available: entitlements.capabilities.assessments,
+                    },
+                  ].map((item) => {
+                    const usedNumber = Number(item.used);
                     const limitNumber =
-                      limit === null ? null : Number(limit);
+                      item.limit === null
+                        ? null
+                        : Number(item.limit);
 
                     const percentage =
-                      limitNumber === null || limitNumber <= 0
+                      limitNumber === null ||
+                      limitNumber <= 0
                         ? 0
                         : Math.min(
                             100,
@@ -374,36 +425,47 @@ export default function ProfilePage() {
 
                     return (
                       <div
-                        key={String(label)}
+                        key={item.label}
                         className="rounded-2xl border border-[var(--cx-border)] p-4"
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-xs font-semibold text-[var(--cx-muted)]">
-                            {label}
+                            {item.label}
                           </span>
 
-                          <span className="text-sm font-bold">
-                            {usedNumber} /{" "}
-                            {limitNumber === null
-                              ? "Unlimited"
-                              : limitNumber}
+                          <span className="text-right text-sm font-bold">
+                            {!item.available
+                              ? `Not included in ${entitlements.plan.name}`
+                              : limitNumber === null
+                                ? `${usedNumber} / Unlimited`
+                                : `${usedNumber} / ${limitNumber}`}
                           </span>
                         </div>
 
-                        {limitNumber !== null && limitNumber > 0 && (
-                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20">
-                            <div
-                              className="h-full rounded-full bg-[var(--cx-text)] transition-all"
-                              style={{
-                                width: `${percentage}%`,
-                              }}
-                            />
-                          </div>
-                        )}
+                        {item.available &&
+                          limitNumber !== null &&
+                          limitNumber > 0 && (
+                            <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/20">
+                              <div
+                                className="h-full rounded-full bg-[var(--cx-text)] transition-all"
+                                style={{
+                                  width: `${percentage}%`,
+                                }}
+                              />
+                            </div>
+                          )}
+
+                        {item.available &&
+                          limitNumber === null && (
+                            <p className="mt-2 text-xs leading-5 text-emerald-300/80">
+                              No commercial quota is currently applied.
+                            </p>
+                          )}
                       </div>
                     );
                   })}
-                </div>
+                  </div>
+                </>
               )}
             </div>
 

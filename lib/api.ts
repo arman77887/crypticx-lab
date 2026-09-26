@@ -652,8 +652,52 @@ export type PaginatedUsersResponse = {
   };
 };
 
-export async function getAdminUsers(): Promise<PaginatedUsersResponse> {
-  return apiRequest<PaginatedUsersResponse>("/users");
+export async function getAdminUsers(
+  search = "",
+): Promise<PaginatedUsersResponse> {
+  const query = search.trim();
+  const path = query
+    ? `/users?search=${encodeURIComponent(query)}`
+    : "/users";
+
+  return apiRequest<PaginatedUsersResponse>(path);
+}
+
+export type UserQuotaOverrides = {
+  targets_total: number | null;
+  assessments_monthly: number | null;
+  reports_monthly: number | null;
+  monitoring_policies: number | null;
+  concurrent_assessments: number | null;
+};
+
+export type UserQuotaOverridesResponse = {
+  success: boolean;
+  data: {
+    user_id: string;
+    overrides: UserQuotaOverrides;
+  };
+};
+
+export async function getAdminUserQuotaOverrides(
+  userId: string,
+): Promise<UserQuotaOverridesResponse> {
+  return apiRequest<UserQuotaOverridesResponse>(
+    `/users/${encodeURIComponent(userId)}/quota-overrides`,
+  );
+}
+
+export async function updateAdminUserQuotaOverrides(
+  userId: string,
+  overrides: UserQuotaOverrides,
+): Promise<UserQuotaOverridesResponse> {
+  return apiRequest<UserQuotaOverridesResponse>(
+    `/users/${encodeURIComponent(userId)}/quota-overrides`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(overrides),
+    },
+  );
 }
 
 export type AdminDashboardResponse = {
@@ -2933,6 +2977,8 @@ export type PlanEntitlements = {
 
 export type AccountEntitlements = PlanEntitlements & {
   usage: AccountUsage;
+  premium_enabled: boolean;
+  quota_mode: "plan_limits" | "unlimited_launch";
 };
 
 export type AccountSubscriptionState = {

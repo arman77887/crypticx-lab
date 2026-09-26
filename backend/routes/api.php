@@ -522,6 +522,16 @@ Route::prefix('v1')->group(function () {
             ]);
 
 
+            Route::get('/users/{user}/quota-overrides', [
+                \App\Http\Controllers\Api\V1\UserController::class,
+                'quotaOverrides',
+            ]);
+
+            Route::patch('/users/{user}/quota-overrides', [
+                \App\Http\Controllers\Api\V1\UserController::class,
+                'updateQuotaOverrides',
+            ]);
+
             Route::delete('/users/{user}', [
                 \App\Http\Controllers\Api\V1\UserController::class,
                 'destroy',

@@ -8,9 +8,12 @@ import {
   createAdminUser,
   deleteAdminUser,
   getAdminUsers,
+  getAdminUserQuotaOverrides,
   updateAdminUser,
+  updateAdminUserQuotaOverrides,
   updateAdminUserRole,
   updateAdminUserVerification,
+  type UserQuotaOverrides,
 } from "@/lib/api";
 
 const roles = [
@@ -69,6 +72,17 @@ export default function AdminUsersPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<ApiUser | null>(null);
+  const [limitUser, setLimitUser] = useState<ApiUser | null>(null);
+  const [limitLoading, setLimitLoading] = useState(false);
+  const [limitSaving, setLimitSaving] = useState(false);
+  const [quotaOverrides, setQuotaOverrides] =
+    useState<UserQuotaOverrides>({
+      targets_total: null,
+      assessments_monthly: null,
+      reports_monthly: null,
+      monitoring_policies: null,
+      concurrent_assessments: null,
+    });
 
   const [createName, setCreateName] = useState("");
   const [createEmail, setCreateEmail] = useState("");
@@ -93,7 +107,7 @@ export default function AdminUsersPage() {
 
       setError("");
 
-      const response = await getAdminUsers();
+      const response = await getAdminUsers(query);
 
       setUsers(response.data);
       setSubscriptionMeta(
@@ -177,6 +191,103 @@ export default function AdminUsersPage() {
   function closeEdit() {
     if (busy) return;
     setEditing(null);
+  }
+
+  async function openLimits(user: ApiUser) {
+    setError("");
+    setLimitUser(user);
+    setLimitLoading(true);
+
+    try {
+      const response =
+        await getAdminUserQuotaOverrides(user.id);
+
+      setQuotaOverrides(response.data.overrides);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to load user quota overrides.",
+      );
+      setLimitUser(null);
+    } finally {
+      setLimitLoading(false);
+    }
+  }
+
+  function closeLimits() {
+    if (limitSaving) return;
+    setLimitUser(null);
+  }
+
+  function updateQuotaField(
+    key: keyof UserQuotaOverrides,
+    value: string,
+  ) {
+    setQuotaOverrides((current) => ({
+      ...current,
+      [key]:
+        value.trim() === ""
+          ? null
+          : Math.max(0, Number.parseInt(value, 10) || 0),
+    }));
+  }
+
+  async function saveLimits() {
+    if (!limitUser) return;
+
+    try {
+      setLimitSaving(true);
+      setError("");
+
+      await updateAdminUserQuotaOverrides(
+        limitUser.id,
+        quotaOverrides,
+      );
+
+      setLimitUser(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to save user limits.",
+      );
+    } finally {
+      setLimitSaving(false);
+    }
+  }
+
+  async function resetLimits() {
+    if (!limitUser) return;
+
+    const defaults: UserQuotaOverrides = {
+      targets_total: null,
+      assessments_monthly: null,
+      reports_monthly: null,
+      monitoring_policies: null,
+      concurrent_assessments: null,
+    };
+
+    try {
+      setLimitSaving(true);
+      setError("");
+
+      await updateAdminUserQuotaOverrides(
+        limitUser.id,
+        defaults,
+      );
+
+      setQuotaOverrides(defaults);
+      setLimitUser(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to reset user limits.",
+      );
+    } finally {
+      setLimitSaving(false);
+    }
   }
 
   async function handleCreate(event: FormEvent) {
@@ -394,7 +505,13 @@ export default function AdminUsersPage() {
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search identity, email or UUID..."
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void loadUsers();
+                }
+              }}
+              placeholder="Search name, email or exact UUID..."
               className="cx-input w-full rounded-xl px-4 py-3 text-sm xl:max-w-md"
             />
 
@@ -603,6 +720,14 @@ export default function AdminUsersPage() {
                           className="cx-button cx-button-secondary rounded-xl px-4 py-2 text-xs font-semibold"
                         >
                           Manage
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void openLimits(user)}
+                          className="cx-button cx-button-secondary rounded-xl px-4 py-2 text-xs font-semibold"
+                        >
+                          Manage Limits
                         </button>
 
                         <button
@@ -926,6 +1051,115 @@ export default function AdminUsersPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {limitUser && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-red-500/15 bg-[#09090b] p-6 shadow-[0_30px_100px_rgba(0,0,0,.8)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.22em] text-red-400">
+                  User Quota Overrides
+                </div>
+
+                <h2 className="mt-2 text-2xl font-black">
+                  Manage Limits
+                </h2>
+
+                <div className="mt-1 text-xs text-white/30">
+                  {limitUser.email}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeLimits}
+                disabled={limitSaving}
+                className="text-xl text-white/35 hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-xl border border-amber-500/15 bg-amber-500/[0.05] p-4 text-xs leading-6 text-amber-100/70">
+              Empty fields inherit the user&apos;s plan default.
+              While Premium is disabled, commercial numeric quotas
+              remain unlimited. Saved overrides will apply when
+              Premium is enabled. Overrides never unlock paid
+              capabilities.
+            </div>
+
+            {limitLoading ? (
+              <div className="mt-6 text-sm text-white/40">
+                Loading quota settings...
+              </div>
+            ) : (
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {[
+                  ["targets_total", "Total Targets"],
+                  ["assessments_monthly", "Monthly Assessments"],
+                  ["reports_monthly", "Monthly Reports"],
+                  ["monitoring_policies", "Monitoring Policies"],
+                  ["concurrent_assessments", "Concurrent Assessments"],
+                ].map(([key, label]) => {
+                  const quotaKey =
+                    key as keyof UserQuotaOverrides;
+
+                  return (
+                    <label
+                      key={key}
+                      className="rounded-xl border border-white/[0.06] bg-black/20 p-4"
+                    >
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-white/35">
+                        {label}
+                      </span>
+
+                      <input
+                        type="number"
+                        min={0}
+                        value={quotaOverrides[quotaKey] ?? ""}
+                        onChange={(event) =>
+                          updateQuotaField(
+                            quotaKey,
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Plan default"
+                        className="cx-input mt-3 w-full rounded-xl px-4 py-3"
+                      />
+
+                      <span className="mt-2 block text-[10px] text-white/25">
+                        Empty = plan default
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                disabled={limitLoading || limitSaving}
+                onClick={() => void resetLimits()}
+                className="cx-button cx-button-secondary rounded-xl px-5 py-3 text-sm font-semibold disabled:opacity-40"
+              >
+                Reset to Plan Defaults
+              </button>
+
+              <button
+                type="button"
+                disabled={limitLoading || limitSaving}
+                onClick={() => void saveLimits()}
+                className="cx-button cx-button-primary rounded-xl px-5 py-3 text-sm font-semibold disabled:opacity-40"
+              >
+                {limitSaving
+                  ? "Saving..."
+                  : "Save User Limits"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </main>

@@ -58,6 +58,11 @@ class User extends Authenticatable
         return $this->hasMany(Subscription::class);
     }
 
+    public function quotaOverride(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(UserQuotaOverride::class);
+    }
+
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(

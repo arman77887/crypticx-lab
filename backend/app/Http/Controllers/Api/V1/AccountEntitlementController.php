@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\EntitlementService;
+use App\Services\PlatformSettingsService;
 use App\Services\QuotaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ class AccountEntitlementController extends Controller
         Request $request,
         EntitlementService $entitlements,
         QuotaService $quotas,
+        PlatformSettingsService $settings,
     ): JsonResponse {
         $user = $request->user();
 

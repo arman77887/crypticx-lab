@@ -146,6 +146,21 @@ class EntitlementService
             return null;
         }
 
+        /*
+         * Quota overrides belong only to persisted platform users.
+         * Unit-level entitlement evaluation may use an unsaved User
+         * instance and must not require the override table.
+         */
+        if ($user->getKey() !== null) {
+            $override = $user
+                ->quotaOverride()
+                ->value($limit);
+
+            if ($override !== null) {
+                return max(0, (int) $override);
+            }
+        }
+
         $planCode =
             $this->effectivePlanCode($user);
 

@@ -23,10 +23,23 @@ class UserController extends Controller
     ) {
     }
 
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
+        $search = trim((string) $request->query('search', ''));
+
         $users = User::query()
             ->with(['roles', 'subscriptions'])
+            ->when(
+                $search !== '',
+                function ($query) use ($search) {
+                    $query->where(function ($query) use ($search) {
+                        $query
+                            ->where('email', 'like', '%'.$search.'%')
+                            ->orWhere('name', 'like', '%'.$search.'%')
+                            ->orWhere('id', $search);
+                    });
+                },
+            )
             ->latest()
             ->paginate(20);
 
@@ -259,6 +272,69 @@ class UserController extends Controller
             'success' => true,
             'message' => 'User deleted successfully.',
         ]);
+    }
+
+    public function quotaOverrides(
+        User $user,
+    ): JsonResponse {
+        $override = $user->quotaOverride()->first();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'user_id' => $user->id,
+                'overrides' => [
+                    'targets_total' => $override?->targets_total,
+                    'assessments_monthly' => $override?->assessments_monthly,
+                    'reports_monthly' => $override?->reports_monthly,
+                    'monitoring_policies' => $override?->monitoring_policies,
+                    'concurrent_assessments' => $override?->concurrent_assessments,
+                ],
+            ],
+        ]);
+    }
+
+    public function updateQuotaOverrides(
+        Request $request,
+        User $user,
+    ): JsonResponse {
+        $validated = $request->validate([
+            'targets_total' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'assessments_monthly' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'reports_monthly' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'monitoring_policies' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'concurrent_assessments' => ['nullable', 'integer', 'min:0', 'max:1000'],
+        ]);
+
+        $keys = [
+            'targets_total',
+            'assessments_monthly',
+            'reports_monthly',
+            'monitoring_policies',
+            'concurrent_assessments',
+        ];
+
+        $values = [];
+
+        foreach ($keys as $key) {
+            $values[$key] = array_key_exists($key, $validated)
+                ? $validated[$key]
+                : null;
+        }
+
+        $hasOverride = collect($values)
+            ->contains(fn ($value) => $value !== null);
+
+        if (! $hasOverride) {
+            $user->quotaOverride()->delete();
+        } else {
+            $user->quotaOverride()->updateOrCreate(
+                [],
+                $values,
+            );
+        }
+
+        return $this->quotaOverrides($user);
     }
 
     private function isOwner(?User $user): bool
