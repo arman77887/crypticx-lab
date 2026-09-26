@@ -76,6 +76,28 @@ class AdminSettingsController extends Controller
                 'sometimes',
                 'boolean',
             ],
+            'premium_enabled' => [
+                'sometimes',
+                'boolean',
+            ],
+
+            'free_targets_total' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'free_assessments_monthly' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'free_reports_monthly' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'free_monitoring_policies' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'free_concurrent_assessments' => ['sometimes', 'integer', 'min:0', 'max:1000'],
+
+            'professional_targets_total' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'professional_assessments_monthly' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'professional_reports_monthly' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'professional_monitoring_policies' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'professional_concurrent_assessments' => ['sometimes', 'integer', 'min:0', 'max:1000'],
+
+            'team_targets_total' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'team_assessments_monthly' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'team_reports_monthly' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'team_monitoring_policies' => ['sometimes', 'integer', 'min:0', 'max:1000000'],
+            'team_concurrent_assessments' => ['sometimes', 'integer', 'min:0', 'max:1000'],
         ]);
 
         if ($validated === []) {
@@ -120,7 +142,7 @@ class AdminSettingsController extends Controller
         foreach ($validated as $key => $value) {
             $this->settings->update(
                 $key,
-                (bool) $value,
+                $value,
                 $request->user(),
             );
         }

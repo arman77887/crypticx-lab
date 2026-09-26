@@ -108,7 +108,11 @@ export default function AdminSettingsPage() {
   }, [load]);
 
   async function toggle(
-    key: keyof SettingsState,
+    key:
+      | "public_registration_enabled"
+      | "assessment_creation_enabled"
+      | "trusted_device_admin_enforcement"
+      | "premium_enabled",
   ) {
     if (!settings || saving) {
       return;
@@ -125,7 +129,9 @@ export default function AdminSettingsPage() {
         ? `${action} public account registration?`
         : key === "assessment_creation_enabled"
           ? `${action} creation of new assessments?`
-          : `${action} trusted-device enforcement for administrator API access?`;
+          : key === "premium_enabled"
+            ? `${action} Premium billing and commercial quotas?`
+            : `${action} trusted-device enforcement for administrator API access?`;
 
     const confirmed =
       window.confirm(confirmationMessage);
@@ -159,6 +165,107 @@ export default function AdminSettingsPage() {
       setSaving(false);
     }
   }
+
+  async function savePlanLimits(
+    plan: "free" | "professional" | "team",
+  ) {
+    if (!settings || saving) {
+      return;
+    }
+
+    const keys = [
+      `${plan}_targets_total`,
+      `${plan}_assessments_monthly`,
+      `${plan}_reports_monthly`,
+      `${plan}_monitoring_policies`,
+      `${plan}_concurrent_assessments`,
+    ] as const;
+
+    const payload: Partial<AdminPlatformSettings> = {};
+
+    for (const key of keys) {
+      payload[key] = settings[key];
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+      setMessage("");
+
+      const response =
+        await updateAdminSettings(payload);
+
+      setSettings(response.data.settings);
+      setMessage(
+        `${plan.charAt(0).toUpperCase() + plan.slice(1)} plan limits updated.`,
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to update plan limits.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function updateLimit(
+    key: keyof AdminPlatformSettings,
+    value: string,
+  ) {
+    if (!settings) {
+      return;
+    }
+
+    const parsed = Number.parseInt(value, 10);
+
+    setSettings({
+      ...settings,
+      [key]:
+        Number.isFinite(parsed) && parsed >= 0
+          ? parsed
+          : 0,
+    });
+  }
+
+  const planDefinitions = [
+    {
+      code: "free" as const,
+      label: "Free",
+    },
+    {
+      code: "professional" as const,
+      label: "Professional",
+    },
+    {
+      code: "team" as const,
+      label: "Team",
+    },
+  ];
+
+  const limitDefinitions = [
+    {
+      suffix: "targets_total",
+      label: "Targets",
+    },
+    {
+      suffix: "assessments_monthly",
+      label: "Assessments / month",
+    },
+    {
+      suffix: "reports_monthly",
+      label: "Reports / month",
+    },
+    {
+      suffix: "monitoring_policies",
+      label: "Monitoring policies",
+    },
+    {
+      suffix: "concurrent_assessments",
+      label: "Concurrent assessments",
+    },
+  ] as const;
 
   return (
     <main className="min-h-screen bg-[#050505] text-white">
@@ -450,6 +557,126 @@ export default function AdminSettingsPage() {
                 description="Automatic evidence, audit and report retention jobs do not currently exist."
               />
             </div>
+          </div>
+        </section>
+
+        <section className="mt-5 rounded-3xl border border-emerald-500/10 bg-[#09090b] p-6 sm:p-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">
+                Premium & Limits
+              </div>
+
+              <h2 className="mt-2 text-2xl font-black">
+                Commercial Controls
+              </h2>
+
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-white/35">
+                Premium billing can be enabled or disabled without a deployment.
+                When Premium is disabled, commercial numeric quotas are unlimited.
+                Security boundaries and capability authorization remain enforced.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={loading || saving || !settings}
+              onClick={() => void toggle("premium_enabled")}
+              className={
+                settings?.premium_enabled
+                  ? "cx-button cx-button-primary shrink-0 rounded-xl px-6 py-3 text-xs font-bold"
+                  : "cx-button cx-button-secondary shrink-0 rounded-xl px-6 py-3 text-xs font-bold"
+              }
+            >
+              {loading
+                ? "Loading..."
+                : settings?.premium_enabled
+                  ? "Premium Enabled"
+                  : "Premium Disabled"}
+            </button>
+          </div>
+
+          <div
+            className={
+              settings?.premium_enabled
+                ? "mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-sm text-emerald-200"
+                : "mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-3 text-sm text-amber-200"
+            }
+          >
+            {settings?.premium_enabled
+              ? "Commercial quotas are enforced according to the plan limits below."
+              : "Commercial quotas: Unlimited. Paid checkout is disabled."}
+          </div>
+
+          <div className="mt-7 grid gap-5 xl:grid-cols-3">
+            {planDefinitions.map((plan) => (
+              <div
+                key={plan.code}
+                className="rounded-2xl border border-white/[0.07] bg-black/25 p-5"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-lg font-black">
+                    {plan.label}
+                  </h3>
+
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.025] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/35">
+                    {settings?.premium_enabled
+                      ? "Configured"
+                      : "Stored"}
+                  </span>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  {limitDefinitions.map((limit) => {
+                    const key =
+                      `${plan.code}_${limit.suffix}` as keyof AdminPlatformSettings;
+
+                    return (
+                      <label
+                        key={limit.suffix}
+                        className="block"
+                      >
+                        <span className="mb-2 block text-xs font-semibold text-white/45">
+                          {limit.label}
+                        </span>
+
+                        <input
+                          type="number"
+                          min={0}
+                          step={1}
+                          disabled={loading || saving || !settings}
+                          value={
+                            settings
+                              ? String(settings[key])
+                              : ""
+                          }
+                          onChange={(event) =>
+                            updateLimit(
+                              key,
+                              event.target.value,
+                            )
+                          }
+                          className="w-full rounded-xl border border-white/[0.08] bg-black/40 px-4 py-3 text-sm font-semibold text-white outline-none transition focus:border-emerald-500/40"
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={loading || saving || !settings}
+                  onClick={() =>
+                    void savePlanLimits(plan.code)
+                  }
+                  className="cx-button cx-button-secondary mt-5 w-full rounded-xl px-5 py-3 text-xs font-bold"
+                >
+                  {saving
+                    ? "Saving..."
+                    : `Save ${plan.label} Limits`}
+                </button>
+              </div>
+            ))}
           </div>
         </section>
 

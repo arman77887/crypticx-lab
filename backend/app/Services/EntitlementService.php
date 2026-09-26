@@ -9,6 +9,7 @@ class EntitlementService
 {
     public function __construct(
         private SubscriptionService $subscriptions,
+        private PlatformSettingsService $settings,
     ) {
     }
 
@@ -134,6 +135,30 @@ class EntitlementService
         User $user,
         string $limit,
     ): ?int {
+        /*
+         * Premium OFF removes commercial numeric quotas only.
+         * Capability authorization and scanner/runtime safety remain intact.
+         */
+        if (! $this->settings->boolean(
+            'premium_enabled',
+            false,
+        )) {
+            return null;
+        }
+
+        $planCode =
+            $this->effectivePlanCode($user);
+
+        $configured =
+            $this->settings->integer(
+                $planCode.'_'.$limit,
+                null,
+            );
+
+        if ($configured !== null) {
+            return $configured;
+        }
+
         $entitlements =
             $this->forUser($user);
 

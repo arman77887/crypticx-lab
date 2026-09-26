@@ -2121,6 +2121,26 @@ export type AdminPlatformSettings = {
   public_registration_enabled: boolean;
   assessment_creation_enabled: boolean;
   trusted_device_admin_enforcement: boolean;
+
+  premium_enabled: boolean;
+
+  free_targets_total: number;
+  free_assessments_monthly: number;
+  free_reports_monthly: number;
+  free_monitoring_policies: number;
+  free_concurrent_assessments: number;
+
+  professional_targets_total: number;
+  professional_assessments_monthly: number;
+  professional_reports_monthly: number;
+  professional_monitoring_policies: number;
+  professional_concurrent_assessments: number;
+
+  team_targets_total: number;
+  team_assessments_monthly: number;
+  team_reports_monthly: number;
+  team_monitoring_policies: number;
+  team_concurrent_assessments: number;
 };
 
 export type AdminSettingsCapabilities = {

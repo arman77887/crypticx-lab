@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Exceptions\PlanQuotaException;
 use App\Models\Assessment;
+use App\Models\PlatformSetting;
 use App\Models\Target;
 use App\Models\User;
 use App\Services\QuotaService;
@@ -19,6 +20,12 @@ class AssessmentMonthlyQuotaRuntimeTest extends TestCase
     {
         $user = User::factory()->create();
         $target = $this->makeTarget($user);
+
+        PlatformSetting::query()->create([
+            'key' => 'premium_enabled',
+            'value' => true,
+            'updated_by' => $user->id,
+        ]);
 
         $quota = app(QuotaService::class);
 

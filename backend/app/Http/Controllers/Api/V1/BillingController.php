@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Exceptions\BillingUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Services\Billing\BillingManager;
+use App\Services\PlatformSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -14,7 +15,19 @@ class BillingController extends Controller
 {
     public function status(
         BillingManager $billing,
+        PlatformSettingsService $settings,
     ): JsonResponse {
+        if (! $settings->boolean('premium_enabled', false)) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'configured' => false,
+                    'checkout_enabled' => false,
+                    'provider' => null,
+                ],
+            ]);
+        }
+
         try {
             $status = $billing->status();
         } catch (BillingUnavailableException) {
@@ -34,7 +47,16 @@ class BillingController extends Controller
     public function checkout(
         Request $request,
         BillingManager $billing,
+        PlatformSettingsService $settings,
     ): JsonResponse {
+        if (! $settings->boolean('premium_enabled', false)) {
+            return response()->json([
+                'success' => false,
+                'code' => 'PREMIUM_DISABLED',
+                'message' => 'Premium subscriptions are temporarily unavailable.',
+            ], 503);
+        }
+
         $validated = $request->validate([
             'plan_code' => [
                 'required',
