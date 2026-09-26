@@ -135,7 +135,6 @@ export default function ScannerPage() {
             setFindings(responseFindings);
             setBusy(false);
 
-            const reloadKey = `crypticx_scanner_reloaded_${assessmentId}`;
             const completionEventKey =
               `crypticx_ga_completed_${assessmentId}`;
 
@@ -149,18 +148,6 @@ export default function ScannerPage() {
               window.sessionStorage.setItem(completionEventKey, "1");
             }
 
-            if (
-              assessment.status === "completed" &&
-              !window.sessionStorage.getItem(reloadKey)
-            ) {
-              window.sessionStorage.setItem(reloadKey, "1");
-              window.sessionStorage.setItem(
-                "crypticx_scanner_assessment",
-                assessmentId,
-              );
-              window.location.reload();
-              return;
-            }
           }
 
           try {
@@ -311,8 +298,7 @@ export default function ScannerPage() {
   const canStart =
     Boolean(target.trim()) &&
     authorized &&
-    !busy &&
-    !assessmentId;
+    !busy;
 
   return (
     <main className="min-h-screen bg-[#09090b] text-white">
