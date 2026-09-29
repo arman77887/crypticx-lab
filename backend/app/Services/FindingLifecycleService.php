@@ -155,4 +155,115 @@ class FindingLifecycleService
             ];
         });
     }
+
+    /**
+     * Delete one finding occurrence and rebuild lifecycle metadata.
+     *
+     * The lifecycle workflow status is intentionally preserved while
+     * at least one occurrence survives. confirmed/resolved/reopened are
+     * explicit workflow states and must not be inferred from history.
+     *
+     * If the deleted finding was the final occurrence, the lifecycle
+     * itself is removed.
+     */
+    public function deleteFindingOccurrence(Finding $finding): array
+    {
+        return DB::transaction(function () use ($finding): array {
+            $finding = Finding::query()
+                ->whereKey($finding->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $targetId = $finding->target_id;
+            $fingerprint = $finding->fingerprint;
+            $findingId = $finding->id;
+
+            if ($fingerprint === null) {
+                $finding->delete();
+
+                return [
+                    'finding_id' => $findingId,
+                    'lifecycle_deleted' => false,
+                    'lifecycle_rebuilt' => false,
+                    'remaining_occurrences' => 0,
+                ];
+            }
+
+            $lifecycle = FindingLifecycle::query()
+                ->where('target_id', $targetId)
+                ->where('fingerprint', $fingerprint)
+                ->lockForUpdate()
+                ->first();
+
+            $finding->delete();
+
+            $remaining = Finding::query()
+                ->where('target_id', $targetId)
+                ->where('fingerprint', $fingerprint)
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->get();
+
+            if ($remaining->isEmpty()) {
+                if ($lifecycle !== null) {
+                    $lifecycle->delete();
+                }
+
+                return [
+                    'finding_id' => $findingId,
+                    'lifecycle_deleted' => $lifecycle !== null,
+                    'lifecycle_rebuilt' => false,
+                    'remaining_occurrences' => 0,
+                ];
+            }
+
+            $first = $remaining->first();
+            $last = $remaining->last();
+
+            if ($lifecycle === null) {
+                /*
+                 * Defensive repair for legacy/inconsistent data.
+                 * Use the surviving finding state only when no lifecycle
+                 * record exists to preserve.
+                 */
+                $lifecycle = FindingLifecycle::query()->create([
+                    'target_id' => $targetId,
+                    'fingerprint' => $fingerprint,
+                    'type' => $last->type,
+                    'title' => $last->title,
+                    'severity' => $last->severity,
+                    'confidence' => $last->confidence,
+                    'status' => $last->status ?: 'open',
+                    'first_seen_at' => $first->created_at,
+                    'last_seen_at' => $last->created_at,
+                    'occurrence_count' => $remaining->count(),
+                    'first_assessment_id' => $first->assessment_id,
+                    'last_assessment_id' => $last->assessment_id,
+                    'last_finding_id' => $last->id,
+                ]);
+            } else {
+                $lifecycle->update([
+                    'type' => $last->type,
+                    'title' => $last->title,
+                    'severity' => $last->severity,
+                    'confidence' => $last->confidence,
+                    'first_seen_at' => $first->created_at,
+                    'last_seen_at' => $last->created_at,
+                    'occurrence_count' => $remaining->count(),
+                    'first_assessment_id' => $first->assessment_id,
+                    'last_assessment_id' => $last->assessment_id,
+                    'last_finding_id' => $last->id,
+                ]);
+            }
+
+            return [
+                'finding_id' => $findingId,
+                'lifecycle_deleted' => false,
+                'lifecycle_rebuilt' => true,
+                'remaining_occurrences' => $remaining->count(),
+                'lifecycle_id' => $lifecycle->id,
+            ];
+        });
+    }
+
 }

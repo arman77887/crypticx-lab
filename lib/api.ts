@@ -1017,16 +1017,25 @@ export async function createTarget(
   });
 }
 
+export type AssessmentScanType =
+  | "web_security"
+  | "ssl_tls"
+  | "dns_intelligence"
+  | "api_security";
+
 export async function createAssessment(
   targetId: string,
   profile: "discovery" | "standard" | "deep" = "standard",
+  scanType?: AssessmentScanType,
 ): Promise<CreateAssessmentResponse> {
   return apiRequest<CreateAssessmentResponse>("/assessments", {
     method: "POST",
     body: JSON.stringify({
       target_id: targetId,
       profile,
-      configuration: {},
+      configuration: scanType
+        ? { scan_type: scanType }
+        : {},
     }),
   });
 }
@@ -1146,6 +1155,25 @@ export async function getAssessmentIntelligence(
   );
 }
 
+
+export async function deleteFinding(
+  findingId: string,
+): Promise<{
+  success: boolean;
+  message: string;
+  data?: {
+    finding_id: string;
+    lifecycle_deleted: boolean;
+    lifecycle_rebuilt: boolean;
+    remaining_occurrences: number;
+    lifecycle_id?: string;
+  };
+}> {
+  return apiRequest(`/findings/${encodeURIComponent(findingId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function getFindings(
   params: {
     assessment_id?: string;
@@ -1185,14 +1213,25 @@ export async function getTargets(params: {
 }
 
 
-export async function getAssessments(params: {
-  page?: number;
-  per_page?: number;
-} = {}) {
+export async function getAssessments(
+  params: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    scan_type?: AssessmentScanType;
+    status?: string;
+    severity?: string;
+    from?: string;
+    to?: string;
+  } = {},
+) {
   const query = new URLSearchParams();
 
-  if (params.page) query.set("page", String(params.page));
-  if (params.per_page) query.set("per_page", String(params.per_page));
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, String(value));
+    }
+  });
 
   const suffix = query.toString() ? `?${query.toString()}` : "";
 

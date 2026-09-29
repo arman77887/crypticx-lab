@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\FindingResource;
 use App\Models\Finding;
 use App\Models\FindingLifecycle;
+use App\Services\FindingLifecycleService;
 use App\Services\TelemetryService;
 use App\Services\RiskScoringService;
 use Illuminate\Http\JsonResponse;
@@ -500,5 +501,62 @@ class FindingController extends Controller
             'data' => $lifecycles,
         ]);
     }
+
+
+    public function destroy(
+        Request $request,
+        Finding $finding,
+        FindingLifecycleService $lifecycleService
+    ): JsonResponse {
+        $ownedFinding = Finding::query()
+            ->whereKey($finding->id)
+            ->whereHas(
+                'assessment',
+                fn ($query) =>
+                    $query->where(
+                        'user_id',
+                        $request->user()->id
+                    )
+            )
+            ->whereHas(
+                'target',
+                fn ($query) =>
+                    $query->where(
+                        'user_id',
+                        $request->user()->id
+                    )
+            )
+            ->firstOrFail();
+
+        $findingId = $ownedFinding->id;
+        $fingerprint = $ownedFinding->fingerprint;
+
+        $result = $lifecycleService
+            ->deleteFindingOccurrence($ownedFinding);
+
+        app(TelemetryService::class)->audit(
+            $request,
+            'finding.deleted',
+            'finding',
+            $request->user(),
+            [
+                'success' => true,
+                'fingerprint' => $fingerprint,
+                'lifecycle_deleted' =>
+                    $result['lifecycle_deleted'] ?? false,
+                'remaining_occurrences' =>
+                    $result['remaining_occurrences'] ?? 0,
+            ],
+            'finding',
+            $findingId,
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Finding deleted.',
+            'data' => $result,
+        ]);
+    }
+
 
 }

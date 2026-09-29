@@ -424,6 +424,11 @@ Route::prefix('v1')->group(function () {
         ]);
 
         Route::middleware('permission:findings.manage')->group(function () {
+            Route::delete('/findings/{finding}', [
+                \App\Http\Controllers\Api\V1\FindingController::class,
+                'destroy',
+            ]);
+
             Route::patch('/admin/finding-lifecycles/{lifecycle}/status', [
                 \App\Http\Controllers\Api\V1\AdminFindingController::class,
                 'updateStatus',

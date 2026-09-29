@@ -31,6 +31,16 @@ class StoreAssessmentRequest extends FormRequest
                 ]),
             ],
             'configuration' => ['nullable', 'array'],
+            'configuration.scan_type' => [
+                'nullable',
+                'string',
+                Rule::in([
+                    'web_security',
+                    'ssl_tls',
+                    'dns_intelligence',
+                    'api_security',
+                ]),
+            ],
         ];
     }
 }

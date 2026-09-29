@@ -320,4 +320,73 @@ class FindingOwnershipTest extends TestCase
             $finding->fresh()->status
         );
     }
+
+    public function test_owner_can_delete_finding_and_final_lifecycle_is_deleted(): void
+    {
+        $owner = $this->makeUser();
+        $this->grantFindingPermissions($owner);
+
+        $finding = $this->makeOwnedFinding($owner);
+
+        $lifecycleId = FindingLifecycle::query()
+            ->where('target_id', $finding->target_id)
+            ->where('fingerprint', $finding->fingerprint)
+            ->value('id');
+
+        Sanctum::actingAs($owner);
+
+        $this->deleteJson(
+            "/api/v1/findings/{$finding->id}"
+        )
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath(
+                'data.remaining_occurrences',
+                0
+            )
+            ->assertJsonPath(
+                'data.lifecycle_deleted',
+                true
+            );
+
+        $this->assertDatabaseMissing(
+            'findings',
+            ['id' => $finding->id]
+        );
+
+        $this->assertDatabaseMissing(
+            'finding_lifecycles',
+            ['id' => $lifecycleId]
+        );
+    }
+
+    public function test_other_user_cannot_delete_finding(): void
+    {
+        $owner = $this->makeUser();
+        $other = $this->makeUser();
+
+        $this->grantFindingPermissions($other);
+
+        $finding = $this->makeOwnedFinding($owner);
+
+        Sanctum::actingAs($other);
+
+        $this->deleteJson(
+            "/api/v1/findings/{$finding->id}"
+        )->assertNotFound();
+
+        $this->assertDatabaseHas(
+            'findings',
+            ['id' => $finding->id]
+        );
+
+        $this->assertDatabaseHas(
+            'finding_lifecycles',
+            [
+                'target_id' => $finding->target_id,
+                'fingerprint' => $finding->fingerprint,
+            ]
+        );
+    }
+
 }

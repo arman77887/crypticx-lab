@@ -19,21 +19,25 @@ const scanTypes = [
   {
     title: "Web Security",
     profile: "standard" as const,
+    scanType: "web_security" as const,
     description: "Headers, configuration and common web security checks.",
   },
   {
     title: "SSL / TLS",
     profile: "standard" as const,
+    scanType: "ssl_tls" as const,
     description: "Certificate, protocol and transport-security analysis.",
   },
   {
     title: "DNS Intelligence",
     profile: "discovery" as const,
+    scanType: "dns_intelligence" as const,
     description: "DNS records and publicly observable configuration signals.",
   },
   {
     title: "API Security",
     profile: "deep" as const,
+    scanType: "api_security" as const,
     description: "Authorized API endpoint and security-control assessment.",
   },
 ];
@@ -246,6 +250,7 @@ export default function ScannerPage() {
       const assessmentResponse = await createAssessment(
         targetResponse.data.id,
         selectedType.profile,
+        selectedType.scanType,
       );
 
       trackEvent("assessment_started", {
