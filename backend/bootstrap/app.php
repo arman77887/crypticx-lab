@@ -12,6 +12,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        /*
+         * Nginx is the only trusted HTTP proxy in front of Laravel.
+         * Nginx validates Cloudflare and restores the real visitor IP
+         * before forwarding the request to 127.0.0.1:8004.
+         */
+        $middleware->trustProxies(
+            at: ['127.0.0.1', '::1']
+        );
+
         $middleware->prepend(
             \App\Http\Middleware\ForceApiJsonResponse::class
         );
