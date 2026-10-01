@@ -14,6 +14,11 @@ Route::prefix('v1')->group(function () {
         ]);
     });
 
+    Route::post('/security/csp-report', [
+        \App\Http\Controllers\Api\V1\CspReportController::class,
+        'store',
+    ])->middleware('throttle:csp-report');
+
     Route::get('/plans', [
         \App\Http\Controllers\Api\V1\PlanCatalogController::class,
         'index',

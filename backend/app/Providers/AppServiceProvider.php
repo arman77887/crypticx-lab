@@ -238,6 +238,19 @@ class AppServiceProvider extends ServiceProvider
         );
 
         RateLimiter::for(
+            'csp-report',
+            function (Request $request): Limit {
+                $ip = (string) (
+                    $request->ip()
+                    ?: 'unknown'
+                );
+
+                return Limit::perMinute(30)
+                    ->by('csp-report-ip:'.$ip);
+            }
+        );
+
+        RateLimiter::for(
             'contact-submit',
             function (Request $request): Limit {
                 $ip = (string) (
